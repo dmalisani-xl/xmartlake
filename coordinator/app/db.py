@@ -10,3 +10,7 @@ class Databases(Enum):
 
 def save_doc(db: Databases, document) -> None:
     raise NotImplementedError
+
+def get_players_in_area(window: tuple[int, int, int, int]) -> list[dict]:
+    """window: x1, y1, x2, y2"""
+    raise NotImplementedError

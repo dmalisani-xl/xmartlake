@@ -10,7 +10,7 @@ from enum import Enum
 from datetime import datetime
 from uuid import uuid4
 
-from app.settings import (
+from settings import (
     DEFAULT_FUEL,
     DEFAULT_HEALTH,
     DEFAULT_BULLETS,
@@ -37,6 +37,7 @@ class ActionOfBot(Enum):
     REFUEL = "R"
     LOAD = "L"  # Load bullets
     TOOLS = "T"  # Repair turn
+    SKIPPED = "/"
 
 
 class Player(BaseModel):
@@ -50,7 +51,6 @@ class Player(BaseModel):
     owner: str
     email: EmailStr
     victories: int = 0
-
 
 
 class PlayerLoader(BaseModel):
@@ -84,18 +84,23 @@ class TurnRecord(BaseModel):
     origin_health: int
     origin_bullets: int
     origin_victories: int
+    origin_shield_enabled: bool
 
-    final_position_x: int
-    final_position_y: int
-    final_fuel: int
-    final_health: int
-    final_bullets: int
-    final_victories: int
+    final_position_x: int | None = None
+    final_position_y: int | None = None
+    final_fuel: int | None = None
+    final_health: int | None = None
+    final_bullets: int | None = None
+    final_victories: int | None = None
+    final_shield_enabled: bool | None = None
 
     sent_payload: str
-    received_response: str
+    received_response: str | None = None
     action: ActionOfBot
     dead: bool = False
+    hit: bool = False
+    target_reached: bool = False
+    wrong_response: bool = False
 
 
 class GameSession(BaseModel):

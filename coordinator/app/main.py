@@ -19,3 +19,10 @@ async def root():
 @app.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(body: PlayerLoader):
     ...
+
+@app.get("/x")
+def prueba():
+    from game import decode_environment
+    # payload = '/..../..../.X../..F./..F.'
+    payload = 'F2345/2345/2345/234F/23F5HABIAUNAVEZ'
+    print(decode_environment(payload))
