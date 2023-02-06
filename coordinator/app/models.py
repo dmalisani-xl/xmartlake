@@ -28,6 +28,7 @@ class GameEventType(Enum):
     END_GAME = "END_GAME"
     END_ROUND = "END_ROUND"
     SOME_DIED = "SOME_DIED"
+    HIT = "HIT"
 
 
 class ActionOfBot(Enum):
@@ -98,7 +99,7 @@ class TurnRecord(BaseModel):
     received_response: str | None = None
     action: ActionOfBot
     dead: bool = False
-    hit: bool = False
+    hit: bool = False  # by collision
     target_reached: bool = False
     wrong_response: bool = False
 
@@ -123,5 +124,5 @@ class GameSession(BaseModel):
 class GameEvent(BaseModel):
     event_type: GameEventType
     session_identifier: str
-    _datetime: datetime = PrivateAttr(default_factory=datetime.now)
+    datetime: datetime = Field(default_factory=datetime.now)
     aditional_info: str | None

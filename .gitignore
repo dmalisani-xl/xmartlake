@@ -1,0 +1,22 @@
+.DS_Store
+*.pyc
+__pycache__/
+*.py[cod]
+
+cov.xml
+notes.txt
+.coverage
+.cognito/
+
+*.ipynb
+.ipynb_checkpoints/
+
+# Virtual environments
+.venv
+/venv/
+
+# IDE stuff
+.vscode/settings.json
+.vscode/launch.json
+
+.idea 
