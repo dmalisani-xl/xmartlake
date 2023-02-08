@@ -2,7 +2,7 @@ from fastapi import (
     FastAPI,
     status
 )
-from models import PlayerLoader
+from app.models import PlayerLoader
 
 VERSION = "0.0.1"
 app = FastAPI(

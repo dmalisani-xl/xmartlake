@@ -10,7 +10,7 @@ from enum import Enum
 from datetime import datetime
 from uuid import uuid4
 
-from settings import (
+from app.settings import (
     DEFAULT_FUEL,
     DEFAULT_HEALTH,
     DEFAULT_BULLETS,
@@ -18,6 +18,9 @@ from settings import (
     DEFAULT_HEIGHT,
     DEFAULT_STOP_LIMIT
 )
+
+def uuid4_generator() -> str:
+    return str(uuid4())
 
 class SupportedLanguage(str, Enum):
     python = 'python'
@@ -55,7 +58,7 @@ class Player(BaseModel):
 
 
 class PlayerLoader(BaseModel):
-    bot_identifier: str = Field(default_factory=uuid4)
+    bot_identifier: str = Field(default_factory=uuid4_generator)
     language: SupportedLanguage
     name: str
     email: EmailStr
@@ -74,8 +77,8 @@ class PlayerLoader(BaseModel):
 
 
 class TurnRecord(BaseModel):
-    turn_identifier: str = Field(default_factory=uuid4)
-    datetime: datetime
+    turn_identifier: str = Field(default_factory=uuid4_generator)
+    timestamp: datetime = Field(default_factory=datetime.now)
     bot_identifier: str
     turn_number: int
 
@@ -97,7 +100,7 @@ class TurnRecord(BaseModel):
 
     sent_payload: str
     received_response: str | None = None
-    action: ActionOfBot
+    action: ActionOfBot | None = None
     dead: bool = False
     hit: bool = False  # by collision
     target_reached: bool = False
@@ -105,7 +108,7 @@ class TurnRecord(BaseModel):
 
 
 class GameSession(BaseModel):
-    session_identifier: str = Field(default_factory=uuid4)
+    session_identifier: str = Field(default_factory=uuid4_generator)
     start_time: datetime = Field(default_factory=datetime.now)
     end_time: datetime | None = None
     initial_players: set[str]
@@ -124,5 +127,5 @@ class GameSession(BaseModel):
 class GameEvent(BaseModel):
     event_type: GameEventType
     session_identifier: str
-    datetime: datetime = Field(default_factory=datetime.now)
+    timestamp: datetime = Field(default_factory=datetime.now)
     aditional_info: str | None

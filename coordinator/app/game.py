@@ -1,6 +1,6 @@
 from random import shuffle
 
-from settings import (
+from app.settings import (
     NORMAL_SIZE_LIMIT,
     DEFAULT_VISIBILY_DISTANCE,
     DEFAULT_HEIGHT,
@@ -14,8 +14,8 @@ from settings import (
     WALL_IDENTIFICATION
 )
 
-from db import save_doc, Databases, get_players_in_area
-from models import (
+from .db import save_doc, Databases, get_players_in_area
+from .models import (
     Player,
     GameSession,
     GameEvent,
@@ -141,7 +141,7 @@ def reduce_board_size(game: GameSession, step_down:int) -> GameSession:
     randomize_positions(players)
 
 def action_skip_turn(game: GameSession, turn: TurnRecord) -> TurnRecord:
-    turn.action = ActionOfBot.SKIPPED
+    turn.action = ActionOfBot.SKIPPED.value
     turn.final_bullets = turn.origin_bullets
     turn.final_health = turn.origin_health
     turn.final_position_x = turn.origin_position_x
@@ -153,7 +153,6 @@ def action_skip_turn(game: GameSession, turn: TurnRecord) -> TurnRecord:
 def action_fire(game: GameSession, turn: TurnRecord) -> TurnRecord:
     raise NotImplementedError
 
-    
 
 def decode_environment(payload: str) -> dict:
     def _get_element_position(substr: str, identification: str) -> list:
@@ -168,12 +167,19 @@ def decode_environment(payload: str) -> dict:
             row = int(enemy_position / scope)
             col = enemy_position - row * scope
             response.append((row, col))
+        return response
 
-    scope = (DEFAULT_VISIBILY_DISTANCE * 2) + 1
+    scope = (DEFAULT_VISIBILY_DISTANCE * 2) + 1 
     substr_payload = payload[:scope*scope]
+    enemies = _get_element_position(substr_payload, FOE_IDENTIFICATION)
+    walls = _get_element_position(substr_payload, WALL_IDENTIFICATION)
+    by_coord = {coord: FOE_IDENTIFICATION for coord in enemies}
+    by_coord.update({coord: WALL_IDENTIFICATION for coord in walls})
+    
     response = {
-        "enemies": _get_element_position(substr_payload, FOE_IDENTIFICATION),
-        "walls": _get_element_position(substr_payload, WALL_IDENTIFICATION),
+        "enemies": enemies,
+        "walls": walls, 
+        "by_coord": by_coord
     }
 
 
@@ -231,83 +237,64 @@ def fight_by_collision(game: GameSession, turn: TurnRecord, target_player: Playe
     return turn
 
 def wall_collision_damage(game: GameSession, turn: TurnRecord) -> TurnRecord:
-    raise NotImplementedError
+    damage = DAMAGE_BY_HIT
+    if turn.origin_shield_enabled:
+        damage = int(damage * SHIELD_PROTECTION_PERCENTAGE / 100)
+    turn.final_health = turn.origin_health - damage
+    turn.hit = True
+    return turn
 
-def manage_collision(*,
-                     game: GameSession,
-                     turn: TurnRecord,
-                     enemies_positions: list,
-                     relative_xy: tuple) -> TurnRecord:
+
+def _find_a_new_position(coord: tuple, occupied_positions: set) -> tuple:
+    new_x, new_y = coord
+    variation_x = 1 if new_x < DEFAULT_VISIBILY_DISTANCE else -1
+    variation_y = 1 if new_y < DEFAULT_VISIBILY_DISTANCE else -1
+    collided = True
+    while collided:
+        if new_x > 0:
+            new_x += variation_x
+            if (new_x, new_y) in occupied_positions:
+                continue
+            collided = False
+            continue
+        if new_y > 0:
+            new_y += variation_y
+            if (new_x, new_y) in occupied_positions:
+                continue
+            collided = False
+            continue
+        if collided:
+            new_x, new_y = 0, 0
+    return (new_x, new_y)
+
+def manage_enemy_collision(*,
+                           game: GameSession,
+                           turn: TurnRecord,
+                           coord: tuple) -> TurnRecord:
     _turn = turn
-    occupied_positions = {position for position in enemies_positions}
-    colided = False
-
-    if relative_xy in occupied_positions:
-        x, y = relative_xy
-        abs_x, abs_y = _make_absolute_coord(
-            original_value=(_turn.origin_position_x, _turn.origin_position_y),
-            relative_position=(x, y)
-        )
-        hit_player = Player(**get_players_in_area(
-            window=(abs_x, abs_y, abs_x, abs_y)[0])
-        )
-        _turn = fight_by_collision(
-            game=game,
-            turn=turn,
-            target_player=hit_player
-        )
-        register_event(
-            game=game,
-            event_type=GameEventType.HIT,
-            info=f"{turn.bot_identifier},{hit_player.bot_identifier}"
-        )
-        collided = True
-        new_x, new_y = relative_xy 
-        while not collided:
-            if new_x > 0:
-                new_x -= 1
-                if (new_x, new_y) in occupied_positions:
-                    continue
-                colided = False
-            if new_y > 0:
-                new_y -= 1
-                if (new_x, new_y) in occupied_positions:
-                    continue
-                colided = False
-            if colided:
-                break
-        relative_xy = (new_x, new_y)
-
-    if colided:
-        _turn.final_position_x = _turn.origin_position_x 
-        _turn.final_position_y = _turn.origin_position_y
-    else:
-        abs_position = _make_absolute_coord(
-            original_value=(_turn.origin_position_x, _turn.origin_position_y),
-            relative_position=relative_xy
-        )
-        _turn.final_position_x , _turn.final_position_y = abs_position
-
-    # evaluate board limits:
-    wall_collision = False
-    if _turn.final_position_x < 0:
-        _turn.final_position_x = 0
-        wall_collision = True
-    if _turn.final_position_y < 0:
-        _turn.final_position_y = 0
-        wall_collision = True
-    if _turn.final_position_x > DEFAULT_WIDTH:
-        _turn.final_position_x = DEFAULT_WIDTH
-        wall_collision = True
-    if _turn.final_position_y > DEFAULT_HEIGHT:
-        _turn.final_position_y = DEFAULT_HEIGHT
-        wall_collision = True
-    if wall_collision:
-        _turn = wall_collision_damage(_turn)
+    x, y = coord
+    hit_player = Player(**get_players_in_area(window=(x, y, x, y)))
+    _turn = fight_by_collision(
+        game=game,
+        turn=turn,
+        target_player=hit_player
+    )
+    register_event(
+        game=game,
+        event_type=GameEventType.HIT,
+        info=f"{turn.bot_identifier},{hit_player.bot_identifier}"
+    )
 
     return _turn
 
 
+def manage_wall_collision(*,
+                          game: GameSession,
+                          turn: TurnRecord,
+                          coord: tuple) -> TurnRecord:
+    _turn = wall_collision_damage(game, turn)
+    return _turn
+        
 def _make_absolute_coord(*, original_value: tuple, relative_position: tuple) -> tuple:
     _centered_x = relative_position[0] - DEFAULT_VISIBILY_DISTANCE
     _centered_y = relative_position[1] - DEFAULT_VISIBILY_DISTANCE
@@ -316,6 +303,14 @@ def _make_absolute_coord(*, original_value: tuple, relative_position: tuple) -> 
         original_value[0] + _centered_y,
     )
 
+def _copy_turn_status_origin_to_final(turn: TurnRecord) -> None:
+    turn.final_bullets = turn.origin_bullets
+    turn.final_fuel = turn.origin_fuel
+    turn.final_health = turn.origin_health
+    turn.final_position_x = turn.origin_position_x
+    turn.final_position_y = turn.origin_position_y
+    turn.final_shield_enabled = turn.origin_shield_enabled
+    turn.final_victories = turn.origin_victories
 
 def action_move(game: GameSession, turn: TurnRecord) -> TurnRecord:
 
@@ -323,35 +318,73 @@ def action_move(game: GameSession, turn: TurnRecord) -> TurnRecord:
         moved_x = abs(x - DEFAULT_VISIBILY_DISTANCE)
         moved_y = abs(y - DEFAULT_VISIBILY_DISTANCE)
         return moved_x + moved_y
+    
+    def consumed_fueld(cells_moved: int):
+        fuel_consumption = FUEL_CONSUMED_BY_TURN_WITH_SHIELD if \
+            turn.origin_shield_enabled else FUEL_CONSUMED_BY_TURN
+        if cells_moved > 2:
+            consumed_fuel = (fuel_consumption + 1) ** (cells_moved - 1)
+        else:
+            consumed_fuel = (cells_moved or 1) * fuel_consumption
+        return consumed_fuel
+
+    turn.action = ActionOfBot.MOVE.value
+    _copy_turn_status_origin_to_final(turn)
 
     cmd = turn.received_response[:3]
     x, y = cmd[1], cmd[2]
-    fuel_consumption = FUEL_CONSUMED_BY_TURN if \
-        turn.origin_shield_enabled else FUEL_CONSUMED_BY_TURN_WITH_SHIELD
+
     try:
         assert x.isnumeric
         assert y.isnumeric
+        x = int(x)
+        y = int(y)
         assert x <= DEFAULT_VISIBILY_DISTANCE * 2 + 1
         assert y <= DEFAULT_VISIBILY_DISTANCE * 2 + 1
     except AssertionError:
         turn.wrong_response = True
         return action_skip_turn(game, turn)
 
-    cells_moved = calculate_moved_cells(x,y)
-    consumed_fuel = ((1 + fuel_consumption) ** cells_moved) - 1
 
-    if turn.origin_fuel < consumed_fuel:
+    cells_moved = calculate_moved_cells(x,y)
+
+    used_fuel = consumed_fueld(cells_moved)
+    if turn.origin_fuel < used_fuel:
         turn.wrong_response = True
         return action_skip_turn(turn)
     
-    turn.final_fuel = turn.origin_fuel - consumed_fuel
-    enemies_positions = decode_environment(turn.sent_payload).get("enemies", [])
-    turn = manage_collision(
-        turn=turn,
-        enemies_positions=enemies_positions,
-        relative_xy=(x,y)
+    turn.final_fuel = turn.origin_fuel - used_fuel
+    environment = decode_environment(turn.sent_payload)
+    occupied_positions = set(environment.get("by_coord").keys())
+    
+    collided_with = environment.get("by_coord", {}).get((x, y))
+
+    while collided_with:
+        abs_x, abs_y = _make_absolute_coord(
+            original_value=(turn.origin_position_x, turn.origin_position_y),
+            relative_position=(x, y)
+        )  
+        if collided_with == FOE_IDENTIFICATION:
+            turn = manage_enemy_collision(
+                game=game,
+                turn=turn,
+                coord=(abs_x, abs_y)
+            )
+        if collided_with == WALL_IDENTIFICATION:
+            turn = manage_wall_collision(
+                game=game,
+                turn=turn,
+                coord=(abs_x, abs_y)
+            )
+        x, y = _find_a_new_position((x, y), occupied_positions)
+        collided_with = environment.get("by_coords", {}).get((x, y))
+
+    abs_x, abs_y = _make_absolute_coord(
+        original_value=(turn.origin_position_x, turn.origin_position_y),
+        relative_position=(x, y)
     )
-    raise turn
+    turn.final_position_x, turn.final_position_y = abs_x, abs_y 
+    return turn
 
 def action_refuel(game: GameSession, turn: TurnRecord) -> TurnRecord:
     raise NotImplementedError
@@ -367,7 +400,7 @@ def action_load_bullet(game: GameSession, turn: TurnRecord) -> TurnRecord:
 
 def process_response_of_player(game: GameSession,
                                player: Player,
-                               turn: TurnRecord) -> GameSession:
+                               turn: TurnRecord) -> TurnRecord:
     response = turn.received_response or "/"
     match response[0]:
         case ActionOfBot.FIRE.value:
@@ -387,6 +420,7 @@ def process_response_of_player(game: GameSession,
     executed_turn = action(game=game, turn=turn)
     # TODO: Update player status
     save_doc(db=Databases.TURNS, document=executed_turn)
+    return executed_turn
 
 
 def execute_loop(game: GameSession) -> Player:
