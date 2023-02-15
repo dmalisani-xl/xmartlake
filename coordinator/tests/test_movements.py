@@ -92,7 +92,7 @@ def test_move_single_step_down_right(patched_save_doc, monkeypatch: MonkeyPatch)
     game = GAME.copy()
     bot_response = "M44NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 8
     assert modified_turn.final_position_y == 8
@@ -111,7 +111,7 @@ def test_move_single_step_up(patched_save_doc, monkeypatch: MonkeyPatch):
     game = GAME.copy()
     bot_response = "M32NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 7
     assert modified_turn.final_position_y == 6
@@ -130,7 +130,7 @@ def test_move_single_double_step_up(patched_save_doc, monkeypatch: MonkeyPatch):
     game = GAME.copy()
     bot_response = "M31NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 7
     assert modified_turn.final_position_y == 5
@@ -149,7 +149,7 @@ def test_move_single_double_step_up_left(patched_save_doc, monkeypatch: MonkeyPa
     game = GAME.copy()
     bot_response = "M21NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 6
     assert modified_turn.final_position_y == 5
@@ -167,7 +167,7 @@ def test_move_single_double_step_up_left_corner(patched_save_doc, monkeypatch: M
     game = GAME.copy()
     bot_response = "M00NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 4
     assert modified_turn.final_position_y == 4
@@ -186,7 +186,7 @@ def test_move_single_double_step_down_right_corner(patched_save_doc, monkeypatch
     game = GAME.copy()
     bot_response = "M66NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 10
     assert modified_turn.final_position_y == 10
@@ -204,7 +204,7 @@ def test_move_stand(patched_save_doc, monkeypatch: MonkeyPatch):
     game = GAME.copy()
     bot_response = "M33NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 7
     assert modified_turn.final_position_y == 7
@@ -222,7 +222,7 @@ def test_move_stand_with_consumed_change(patched_save_doc, monkeypatch: MonkeyPa
     game = GAME.copy()
     bot_response = "M33NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 7
     assert modified_turn.final_position_y == 7
@@ -241,7 +241,7 @@ def test_move_stand_with_shield(patched_save_doc, monkeypatch: MonkeyPatch):
     game = GAME.copy()
     bot_response = "M33NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 7
     assert modified_turn.final_position_y == 7
@@ -261,7 +261,7 @@ def test_move_double_with_shield(patched_save_doc, monkeypatch: MonkeyPatch):
     game = GAME.copy()
     bot_response = "M31NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 7
     assert modified_turn.final_position_y == 5
@@ -280,7 +280,7 @@ def test_move_outside_of_visibility(patched_save_doc, monkeypatch: MonkeyPatch):
     game = GAME.copy()
     bot_response = "M99NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "/"
     assert modified_turn.final_position_x == 7
     assert modified_turn.final_position_y == 7
@@ -300,7 +300,7 @@ def test_move_to_collision(patched_save_doc, mocked_getplayer, monkeypatch: Monk
     mocked_getplayer.return_value = PLAYER_2.dict()
     bot_response = "M11NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 6
     assert modified_turn.final_position_y == 5
@@ -325,7 +325,7 @@ def test_move_to_collision_with_shield(patched_save_doc, mocked_getplayer, monke
     bot_response = "M11NOTMATERTEXT"
     turn.origin_shield_enabled = True
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 6
     assert modified_turn.final_position_y == 5
@@ -351,7 +351,7 @@ def test_move_to_collision_with_enemy_shield(patched_save_doc, mocked_getplayer,
     mocked_getplayer.return_value = player2.dict()
     bot_response = "M11NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 6
     assert modified_turn.final_position_y == 5
@@ -379,7 +379,7 @@ def test_move_to_collision_with_both_shield(patched_save_doc, mocked_getplayer, 
     mocked_getplayer.return_value = player2.dict()
     bot_response = "M11NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 6
     assert modified_turn.final_position_y == 5
@@ -405,7 +405,7 @@ def test_move_outside_of_limits(patched_save_doc, monkeypatch: MonkeyPatch):
     game = GAME.copy()
     bot_response = "M99NOTMATERTEXT"
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "/"
     assert modified_turn.final_position_x == 7
     assert modified_turn.final_position_y == 7
@@ -435,19 +435,19 @@ def test_move_to_wall_collision(patched_save_doc, monkeypatch: MonkeyPatch):
     bot_response = "M11NOTMATERTEXT"
 
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
-    assert modified_turn.final_position_x == 6
-    assert modified_turn.final_position_y == 5
+    assert modified_turn.final_position_x == 7
+    assert modified_turn.final_position_y == 6
     assert modified_turn.hit
     assert modified_turn.final_bullets == modified_turn.origin_bullets
     assert modified_turn.final_health == 90
     assert modified_turn.final_shield_enabled == modified_turn.origin_shield_enabled
     assert modified_turn.final_fuel == 42
 
-
+@patch("app.game.dump_turn_to_botstatus")
 @patch("app.game.save_doc")
-def test_move_to_wall_collision_with_shield(patched_save_doc, monkeypatch: MonkeyPatch):
+def test_move_to_wall_collision_with_shield(patched_save_doc, mocked_savestatus, monkeypatch: MonkeyPatch):
     patch_settings(monkeypatch)
     player = PLAYER_1.copy()
     turn = TURN.copy()
@@ -466,13 +466,55 @@ def test_move_to_wall_collision_with_shield(patched_save_doc, monkeypatch: Monke
     bot_response = "M11NOTMATERTEXT"
 
     turn.received_response = bot_response
-    modified_turn = process_response_of_player(game, player, turn)
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
     assert modified_turn.action == "M"
-    assert modified_turn.final_position_x == 6
-    assert modified_turn.final_position_y == 5
+    assert modified_turn.final_position_x == 7
+    assert modified_turn.final_position_y == 6
     assert modified_turn.hit
     assert modified_turn.final_bullets == modified_turn.origin_bullets
     assert modified_turn.final_health == 95
     assert modified_turn.final_shield_enabled == modified_turn.origin_shield_enabled
     assert modified_turn.final_fuel == 23
+    mocked_savestatus.called_once()
 
+@patch("app.game.dump_turn_to_botstatus")
+@patch("app.game.get_players_in_area")
+@patch("app.game.save_doc")
+def test_move_to_collision_all_path_occupied(
+    patched_save_doc,
+    mocked_getplayer,
+    mocked_savestatus,
+    monkeypatch: MonkeyPatch
+):
+    patch_settings(monkeypatch)
+    player = PLAYER_1.copy()
+    turn = TURN.copy()
+    mocked_getplayer.return_value = PLAYER_2.dict()
+    ROWS = [
+        "...F..W",
+        "...F..W",
+        "...F..W",
+        "...X..W",
+        "......W",
+        "......W",
+        "......W",
+    ]
+    turn.sent_payload = "".join(ROWS)
+    game = GAME.copy()
+    bot_response = "M31NOTMATERTEXT"
+
+    turn.received_response = bot_response
+    modified_turn = process_response_of_player(game=game, player=player, turn=turn)
+    assert modified_turn.action == "M"
+    assert modified_turn.final_position_x == 7
+    assert modified_turn.final_position_y == 7
+    assert modified_turn.hit
+    assert modified_turn.final_bullets == modified_turn.origin_bullets
+    assert modified_turn.final_health == 90
+    assert modified_turn.final_shield_enabled == modified_turn.origin_shield_enabled
+    assert modified_turn.final_fuel == 48
+    mocked_savestatus.called_once()
+
+
+# test target death
+# test source death

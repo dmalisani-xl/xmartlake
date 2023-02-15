@@ -20,3 +20,4 @@ notes.txt
 .vscode/launch.json
 
 .idea 
+coordinator/app/__pycache__/*.pyc

@@ -7,11 +7,13 @@ from app.settings import (
     DEFAULT_WIDTH,
     FUEL_CONSUMED_BY_TURN,
     FUEL_CONSUMED_BY_TURN_WITH_SHIELD,
-    FOE_IDENTIFICATION,
+    FOE_SYMBOL,
     DAMAGE_BY_BULLET,
     DAMAGE_BY_HIT,
     SHIELD_PROTECTION_PERCENTAGE,
-    WALL_IDENTIFICATION
+    WALL_SYMBOL,
+    PLAYER_POSITION_IDENTIFICACION,
+    DEFAULT_EMPTY_PLACE_SYMBOL
 )
 
 from .db import save_doc, Databases, get_players_in_area
@@ -82,9 +84,42 @@ def get_players_in_environment(player: Player) -> list[Player]:
     players = [Player(**p) for p in get_players_in_area(**window)]
     return players
 
+def get_player_environment(player: Player):
+    player_in_environment = get_players_in_environment(player)
+    x, y = player.position_x, player.position_y
+    right_wall = DEFAULT_WIDTH - x
+    left_wall = -x - 1
+    up_wall = -y - 1
+    down_wall = DEFAULT_WIDTH - y
+    enemy_by_relative_coord = {(p.position_x - x, p.position_y - y): p for p in player_in_environment}
+    environment = []
+    for row in range(-DEFAULT_VISIBILY_DISTANCE, DEFAULT_VISIBILY_DISTANCE +1):
+        row_data = []
+        for col in range(-DEFAULT_VISIBILY_DISTANCE, DEFAULT_VISIBILY_DISTANCE +1):
+            symbol = DEFAULT_EMPTY_PLACE_SYMBOL
+            if any([
+                row <= up_wall,
+                row >= down_wall,
+                col <= left_wall,
+                col >= right_wall
+            ]):
+                symbol = WALL_SYMBOL
+            if (col, row) in enemy_by_relative_coord.keys():
+                symbol = FOE_SYMBOL
+            if row == 0 and col == 0:
+                symbol = PLAYER_POSITION_IDENTIFICACION
+            row_data.append(symbol)
+        environment.append(row_data)
+    return environment
+
+
+
 
 def stringfy_parameter(player: Player, environment: list[list[str]]):
-    ...
+    flat_environment = "".join(["".join(elem) for elem in environment])
+    shield = "T" if player.shield_mounted else "F"
+    flat_environment += f"{player.fuel:02}{player.bullets:02}{player.health:02}{shield}"
+    return flat_environment
 
 
 def call_to_bot(player: Player, parameter: str) -> str:
@@ -94,7 +129,7 @@ def call_to_bot(player: Player, parameter: str) -> str:
 def play_next_turn(game: GameSession) -> TurnRecord:
     player_id = _choice_next_player(game)
     player = _load_player(player_id)
-    environment = get_players_in_environment(player)
+    environment = get_player_environment(player)
     turn_parameter = stringfy_parameter(player, environment)
     turn = TurnRecord(
         bot_identifier=player_id,
@@ -166,15 +201,15 @@ def decode_environment(payload: str) -> dict:
             last_found = enemy_position + 1
             row = int(enemy_position / scope)
             col = enemy_position - row * scope
-            response.append((row, col))
+            response.append((col, row))
         return response
 
     scope = (DEFAULT_VISIBILY_DISTANCE * 2) + 1 
     substr_payload = payload[:scope*scope]
-    enemies = _get_element_position(substr_payload, FOE_IDENTIFICATION)
-    walls = _get_element_position(substr_payload, WALL_IDENTIFICATION)
-    by_coord = {coord: FOE_IDENTIFICATION for coord in enemies}
-    by_coord.update({coord: WALL_IDENTIFICATION for coord in walls})
+    enemies = _get_element_position(substr_payload, FOE_SYMBOL)
+    walls = _get_element_position(substr_payload, WALL_SYMBOL)
+    by_coord = {coord: FOE_SYMBOL for coord in enemies}
+    by_coord.update({coord: WALL_SYMBOL for coord in walls})
     
     response = {
         "enemies": enemies,
@@ -249,15 +284,20 @@ def _find_a_new_position(coord: tuple, occupied_positions: set) -> tuple:
     new_x, new_y = coord
     variation_x = 1 if new_x < DEFAULT_VISIBILY_DISTANCE else -1
     variation_y = 1 if new_y < DEFAULT_VISIBILY_DISTANCE else -1
+    if new_x == DEFAULT_VISIBILY_DISTANCE:
+        variation_x = 0
+    if new_y == DEFAULT_VISIBILY_DISTANCE:
+        variation_y = 0
+                
     collided = True
     while collided:
-        if new_x > 0:
+        if DEFAULT_VISIBILY_DISTANCE - abs(new_x) > 0:
             new_x += variation_x
             if (new_x, new_y) in occupied_positions:
                 continue
             collided = False
             continue
-        if new_y > 0:
+        if DEFAULT_VISIBILY_DISTANCE - abs(new_y) > 0:
             new_y += variation_y
             if (new_x, new_y) in occupied_positions:
                 continue
@@ -287,6 +327,18 @@ def manage_enemy_collision(*,
 
     return _turn
 
+def dump_turn_to_botstatus(*, game: GameSession,
+                              player: Player,
+                              turn: TurnRecord) -> None:
+    player.bullets = turn.final_bullets
+    player.health = turn.final_health
+    player.fuel = turn.final_fuel
+    player.shield_mounted = turn.final_shield_enabled
+    player.position_x = turn.final_position_x
+    player.position_y = turn.final_position_y
+    player.victories = turn.final_victories
+    player.dead = dead_player(game, player)
+    save_doc(Databases.PLAYERS, player)
 
 def manage_wall_collision(*,
                           game: GameSession,
@@ -364,13 +416,13 @@ def action_move(game: GameSession, turn: TurnRecord) -> TurnRecord:
             original_value=(turn.origin_position_x, turn.origin_position_y),
             relative_position=(x, y)
         )  
-        if collided_with == FOE_IDENTIFICATION:
+        if collided_with == FOE_SYMBOL:
             turn = manage_enemy_collision(
                 game=game,
                 turn=turn,
                 coord=(abs_x, abs_y)
             )
-        if collided_with == WALL_IDENTIFICATION:
+        if collided_with == WALL_SYMBOL:
             turn = manage_wall_collision(
                 game=game,
                 turn=turn,
@@ -398,10 +450,12 @@ def action_change_status_shield(game: GameSession, turn: TurnRecord) -> TurnReco
 def action_load_bullet(game: GameSession, turn: TurnRecord) -> TurnRecord:
     raise NotImplementedError
 
-def process_response_of_player(game: GameSession,
+def process_response_of_player(*, 
+                               game: GameSession,
                                player: Player,
                                turn: TurnRecord) -> TurnRecord:
     response = turn.received_response or "/"
+    response = response.upper()
     match response[0]:
         case ActionOfBot.FIRE.value:
             action = action_fire
@@ -409,16 +463,16 @@ def process_response_of_player(game: GameSession,
             action = action_move
         case ActionOfBot.REFUEL.value:
             action = action_refuel
-        case ActionOfBot.TOOLS:
+        case ActionOfBot.TOOLS.value:
             action = action_tools
-        case ActionOfBot.SHIELD:
+        case ActionOfBot.SHIELD.value:
             action = action_change_status_shield
-        case ActionOfBot.LOAD:
+        case ActionOfBot.LOAD.value:
             action = action_load_bullet
         case other:
             action = action_skip_turn
     executed_turn = action(game=game, turn=turn)
-    # TODO: Update player status
+    dump_turn_to_botstatus(game=game, player=player, turn=turn)
     save_doc(db=Databases.TURNS, document=executed_turn)
     return executed_turn
 

@@ -55,6 +55,7 @@ class Player(BaseModel):
     owner: str
     email: EmailStr
     victories: int = 0
+    dead: bool = False
 
 
 class PlayerLoader(BaseModel):
