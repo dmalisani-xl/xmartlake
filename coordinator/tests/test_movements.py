@@ -1,9 +1,7 @@
-from copy import copy
 from unittest.mock import patch
 from pytest import MonkeyPatch
 
 from app.models import Player, GameSession, TurnRecord
-from pytest import MonkeyPatch
 from app.game import process_response_of_player
 
 from app.settings import *
@@ -62,22 +60,23 @@ TURN = TurnRecord(
     origin_health=PLAYER_1.health,
     origin_shield_enabled=PLAYER_1.shield_mounted,
     origin_victories=0,
-
     sent_payload=PAYLOAD
 )
 
+
 def patch_settings(patch_instance, overwrite: dict = None):
     over = overwrite if overwrite else {}
-    var_default_value = [
-        ("FUEL_CONSUMED_BY_TURN", 1),
-        ("FUEL_CONSUMED_BY_TURN_WITH_SHIELD",  2),
-        ("DEFAULT_VISIBILY_DISTANCE", 3),
-        ("DAMAGE_BY_HIT", 10),
-        ("SHIELD_PROTECTION_PERCENTAGE", 50),
-        ("DEFAULT_WIDTH", 100),
-        ("DEFAULT_HEIGHT", 100),
-    ]
-    for name, v in var_default_value:
+    var_default_value = {
+        "FUEL_CONSUMED_BY_TURN": 1,
+        "FUEL_CONSUMED_BY_TURN_WITH_SHIELD": 2,
+        "DEFAULT_VISIBILY_DISTANCE": 3,
+        "DAMAGE_BY_HIT": 10,
+        "SHIELD_PROTECTION_PERCENTAGE": 50,
+        "DEFAULT_WIDTH": 20,
+        "DEFAULT_HEIGHT": 20,
+        "DAMAGE_BY_BULLET": 20
+    }
+    for name, v in var_default_value.items():
         if name in over.keys():
             value = over[name]
         else:
@@ -297,7 +296,7 @@ def test_move_to_collision(patched_save_doc, mocked_getplayer, monkeypatch: Monk
     player = PLAYER_1.copy()
     turn = TURN.copy()
     game = GAME.copy()
-    mocked_getplayer.return_value = PLAYER_2.dict()
+    mocked_getplayer.return_value = [PLAYER_2.dict()]
     bot_response = "M11NOTMATERTEXT"
     turn.received_response = bot_response
     modified_turn = process_response_of_player(game=game, player=player, turn=turn)
@@ -321,7 +320,7 @@ def test_move_to_collision_with_shield(patched_save_doc, mocked_getplayer, monke
     player = PLAYER_1.copy()
     turn = TURN.copy()
     game = GAME.copy()
-    mocked_getplayer.return_value = PLAYER_2.dict()
+    mocked_getplayer.return_value = [PLAYER_2.dict()]
     bot_response = "M11NOTMATERTEXT"
     turn.origin_shield_enabled = True
     turn.received_response = bot_response
@@ -348,7 +347,7 @@ def test_move_to_collision_with_enemy_shield(patched_save_doc, mocked_getplayer,
     player2.shield_mounted = True
     turn = TURN.copy()
     game = GAME.copy()
-    mocked_getplayer.return_value = player2.dict()
+    mocked_getplayer.return_value = [player2.dict()]
     bot_response = "M11NOTMATERTEXT"
     turn.received_response = bot_response
     modified_turn = process_response_of_player(game=game, player=player, turn=turn)
@@ -376,7 +375,7 @@ def test_move_to_collision_with_both_shield(patched_save_doc, mocked_getplayer, 
     turn = TURN.copy()
     game = GAME.copy()
     turn.origin_shield_enabled = True
-    mocked_getplayer.return_value = player2.dict()
+    mocked_getplayer.return_value = [player2.dict()]
     bot_response = "M11NOTMATERTEXT"
     turn.received_response = bot_response
     modified_turn = process_response_of_player(game=game, player=player, turn=turn)
@@ -489,7 +488,7 @@ def test_move_to_collision_all_path_occupied(
     patch_settings(monkeypatch)
     player = PLAYER_1.copy()
     turn = TURN.copy()
-    mocked_getplayer.return_value = PLAYER_2.dict()
+    mocked_getplayer.return_value = [PLAYER_2.dict()]
     ROWS = [
         "...F..W",
         "...F..W",

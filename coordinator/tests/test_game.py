@@ -22,7 +22,7 @@ def _players_maker(quantity: int) -> list[Player]:
 @patch("app.game.save_doc")
 def test_gamestarter(patched_save_doc):
     players = _players_maker(5)
-    game = start_new_game(players=players, width=100, height=200)
+    game, _ = start_new_game(players=players, width=100, height=200)
     assert type(game) == GameSession
     assert set(game.current_players) == set(game.initial_players)
     assert len(game.initial_players) == len(game.players_order)
