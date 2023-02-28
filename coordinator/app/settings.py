@@ -3,6 +3,7 @@ DEFAULT_WIDTH = 100
 DEFAULT_HEIGHT = 100
 DEFAULT_STOP_LIMIT = 1000
 NORMAL_SIZE_LIMIT = 800  # Set how many turns in normal size board
+DECREMENT_AFTER_LIMIT = 10
 
 # --- Player settings
 DEFAULT_FUEL = 100

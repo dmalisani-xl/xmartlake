@@ -57,6 +57,14 @@ class Player(BaseModel):
     victories: int = 0
     dead: bool = False
 
+    @property
+    def _id(self) -> str:
+        return self.bot_identifier
+
+    def export(self) -> dict:
+        data = self.dict()
+        data["_id"] = self._id
+        return data
 
 class PlayerLoader(BaseModel):
     bot_identifier: str = Field(default_factory=uuid4_generator)
@@ -71,9 +79,9 @@ class PlayerLoader(BaseModel):
     @validator("avatar_b64")
     def png_or_jpg_length_less_than_64k(cls, value):
         if len(value) > 64000:
-            raise ValidationError("Avatar is too big")
+            raise ValidationError("Avatar is too big", model=PlayerLoader)
         if not value.startswith("data:image/jpeg;base64,") or value.startswith("data:image/png;base64,"):
-            raise ValidationError("Avatar must have a PNG or JPG")
+            raise ValidationError("Avatar must have a PNG or JPG", model=PlayerLoader)
         return value
 
 
@@ -89,7 +97,7 @@ class TurnRecord(BaseModel):
     origin_health: int
     origin_bullets: int
     origin_victories: int
-    origin_shield_enabled: bool
+    origin_shield_enabled: bool = False
 
     final_position_x: int | None = None
     final_position_y: int | None = None
@@ -101,12 +109,21 @@ class TurnRecord(BaseModel):
 
     sent_payload: str
     received_response: str | None = None
-    action: ActionOfBot | None = None
+    action: str | None = None
     dead: bool = False
     hit: bool = False  # by collision
     target_reached: bool = False
     wrong_response: bool = False
+    notes: str = ""
 
+    @property
+    def _id(self) -> str:
+        return self.turn_identifier
+
+    def export(self) -> dict:
+        data = self.dict()
+        data["_id"] = self._id
+        return data
 
 class GameSession(BaseModel):
     session_identifier: str = Field(default_factory=uuid4_generator)
@@ -115,7 +132,8 @@ class GameSession(BaseModel):
     initial_players: set[str]
     current_players: set[str]
     players_order: list[str]
-    current_turn: str | None = None
+    last_bot_played: str | None
+    current_turn: int = 0
     past_turns: list[str] = []
     board_size_x: int = DEFAULT_WIDTH
     board_size_y: int = DEFAULT_HEIGHT
@@ -123,10 +141,26 @@ class GameSession(BaseModel):
     players_position: list[list[str]] | None = None
     normal_size_limit: int
     stop_limit: int = DEFAULT_STOP_LIMIT
+
+    @property
+    def _id(self) -> str:
+        return self.session_identifier
     
+    def export(self) -> dict:
+        data = self.dict()
+        data["_id"] = self._id
+        data["initial_players"] = list(self.initial_players)
+        data["current_players"] = list(self.current_players)
+        return data
 
 class GameEvent(BaseModel):
     event_type: GameEventType
     session_identifier: str
     timestamp: datetime = Field(default_factory=datetime.now)
     aditional_info: str | None
+
+    def export(self) -> dict:
+        data = self.dict()
+        data["_id"] = str(uuid4())
+        data["event_type"] = self.event_type.value
+        return data

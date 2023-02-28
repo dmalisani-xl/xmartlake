@@ -18,15 +18,16 @@ def _players_maker(quantity: int) -> list[Player]:
         list_of_players.append(p)
     return list_of_players
 
-
+@patch("app.game.load_ongoing_game", return_value=None)
 @patch("app.game.save_doc")
-def test_gamestarter(patched_save_doc):
+def test_gamestarter_first_time(patched_save_doc, patched_load):
     players = _players_maker(5)
     game, _ = start_new_game(players=players, width=100, height=200)
     assert type(game) == GameSession
     assert set(game.current_players) == set(game.initial_players)
     assert len(game.initial_players) == len(game.players_order)
     patched_save_doc.assert_called_once()
+    patched_load.assert_called_once()
 
 
 base_game = GameSession(

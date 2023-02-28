@@ -1,10 +1,13 @@
-from random import shuffle
+from random import shuffle, choice
+from fastapi.logger import logger
 
 from app.settings import (
+    DEFAULT_STOP_LIMIT,
     NORMAL_SIZE_LIMIT,
     DEFAULT_VISIBILY_DISTANCE,
     DEFAULT_HEIGHT,
     DEFAULT_WIDTH,
+    DECREMENT_AFTER_LIMIT,
     FUEL_CONSUMED_BY_TURN,
     FUEL_CONSUMED_BY_TURN_WITH_SHIELD,
     FOE_SYMBOL,
@@ -13,10 +16,20 @@ from app.settings import (
     SHIELD_PROTECTION_PERCENTAGE,
     WALL_SYMBOL,
     PLAYER_POSITION_IDENTIFICACION,
-    DEFAULT_EMPTY_PLACE_SYMBOL
+    DEFAULT_EMPTY_PLACE_SYMBOL,
+    REFUEL_BY_TURN,
+    REPAIR_BY_TURN,
+    RELOAD_BY_TURN
 )
 
-from .db import save_doc, Databases, get_players_in_area
+from .db import (
+    load_doc,
+    save_doc,
+    Databases,
+    get_players_in_area,
+    get_running_games
+)
+
 from .models import (
     Player,
     GameSession,
@@ -36,6 +49,9 @@ def start_new_game(*,
     current_game = load_ongoing_game()
     if current_game:
         return current_game, True
+    if not players:
+        logger.debug("Receive null parameter")
+        raise ValueError("Need players for play")
     players_id = {pyr.bot_identifier for pyr in players}
     list_players = list(players_id)
     shuffle(list_players)
@@ -49,19 +65,37 @@ def start_new_game(*,
         board_size_y=height
     )
     save_doc(Databases.GAMES, session)
-    return session
+    return session, False
 
 
 def load_ongoing_game() -> None | GameSession:
     """Return the ongoing game if exists"""
+    ongoing = get_running_games()
+    if ongoing:
+        if len(ongoing) > 1:
+            logger.warning("There are many ongoing games")
+        return GameSession(**ongoing[0])
+    return None
 
 
 def _choice_next_player(session: GameSession) -> Player:
-    ...
+    if session.last_bot_played is None:
+        index = 0
+        register_event(session, GameEventType.START_GAME)
+    else:
+        index = session.players_order.index(session.last_bot_played) + 1
+        index = 0 if index == len(session.players_order) else index
+        if index == 0:
+            register_event(session, GameEventType.END_ROUND)
+    
+    chosen = session.players_order[index]
+
+    return load_player(chosen)
 
 
-def _load_player(bot_id: str) -> Player:
-    ...
+def load_player(bot_id: str) -> Player:
+    doc = load_doc(Databases.PLAYERS, document_id=bot_id)
+    return Player(**doc)
 
 
 def get_players_in_environment(player: Player) -> list[Player]:
@@ -81,8 +115,9 @@ def get_players_in_environment(player: Player) -> list[Player]:
         evaluate_element_of_window(current_x, +DEFAULT_VISIBILY_DISTANCE),
         evaluate_element_of_window(current_y, +DEFAULT_VISIBILY_DISTANCE)
     )
-    players = [Player(**p) for p in get_players_in_area(**window)]
+    players = [Player(**p) for p in get_players_in_area(window)]
     return players
+
 
 def get_player_environment(player: Player):
     player_in_environment = get_players_in_environment(player)
@@ -113,8 +148,6 @@ def get_player_environment(player: Player):
     return environment
 
 
-
-
 def stringfy_parameter(player: Player, environment: list[list[str]]):
     flat_environment = "".join(["".join(elem) for elem in environment])
     shield = "T" if player.shield_mounted else "F"
@@ -127,12 +160,11 @@ def call_to_bot(player: Player, parameter: str) -> str:
 
 
 def play_next_turn(game: GameSession) -> TurnRecord:
-    player_id = _choice_next_player(game)
-    player = _load_player(player_id)
+    player = _choice_next_player(game)
     environment = get_player_environment(player)
     turn_parameter = stringfy_parameter(player, environment)
     turn = TurnRecord(
-        bot_identifier=player_id,
+        bot_identifier=player.bot_identifier,
         turn_number=game.current_turn,
         origin_position_x=player.position_x,
         origin_position_y=player.position_y,
@@ -151,12 +183,29 @@ def _get_all_players() -> list[Player]:
     ...
 
 
-def randomize_positions(players: list[Player]):
-    # Need detect overlaping
-    # Save positions to db
-    ...
+def _board_coords_maker() -> list[tuple]:
+    board = []
+    for row in range(DEFAULT_HEIGHT):
+        for col in range(DEFAULT_HEIGHT):
+            board.append(
+                (col, row)
+            )
+    return board
 
-def reduce_board_size(game: GameSession, step_down:int) -> GameSession:
+
+def randomize_positions(players: list[Player]):
+    board_coords = _board_coords_maker()
+    if len(players) > len(board_coords):
+        raise Exception(f"Board too small for {len(players)} players")
+    shuffle(board_coords)
+    for player in players:
+        coord = board_coords.pop()
+        player.position_x, player.position_y = coord
+        save_doc(Databases.PLAYERS, player)
+
+
+
+def reduce_board_size(*, game: GameSession, step_down:int) -> GameSession:
     vertical_window = (
         game.board_size_x - step_down,
         0,
@@ -175,18 +224,69 @@ def reduce_board_size(game: GameSession, step_down:int) -> GameSession:
     players = [Player(**p) for p in player_in_vertical_area]
     randomize_positions(players)
 
+
 def action_skip_turn(game: GameSession, turn: TurnRecord) -> TurnRecord:
     turn.action = ActionOfBot.SKIPPED.value
-    turn.final_bullets = turn.origin_bullets
-    turn.final_health = turn.origin_health
-    turn.final_position_x = turn.origin_position_x
-    turn.final_position_y = turn.origin_position_y
-    turn.final_victories = turn.origin_victories
-    turn.final_fuel = turn.origin_fuel - FUEL_CONSUMED_BY_TURN
+    turn.final_bullets = turn.origin_bullets if not turn.final_bullets else turn.final_bullets
+    turn.final_health = turn.origin_health if not turn.final_health else turn.final_health
+    turn.final_position_x = turn.origin_position_x if not turn.final_position_x else turn.final_position_x
+    turn.final_position_y = turn.origin_position_y if not turn.final_position_y else turn.final_position_y
+    turn.final_victories = turn.origin_victories if not turn.final_victories else turn.final_victories
+    turn.final_fuel = turn.origin_fuel - FUEL_CONSUMED_BY_TURN if not turn.final_fuel else turn.final_fuel
     return turn
 
+
 def action_fire(game: GameSession, turn: TurnRecord) -> TurnRecord:
-    raise NotImplementedError
+
+    turn.action = ActionOfBot.FIRE.value
+    _copy_turn_status_origin_to_final(turn)
+
+    cmd = turn.received_response[:3] if turn.received_response else "XXX"
+    target_x, target_y = cmd[1], cmd[2]
+    turn.final_bullets = turn.origin_bullets - 1  # If wrong response, lose a bullet
+    turn.final_fuel = turn.origin_fuel - consumed_fueld(turn, 0)
+    try:
+        assert target_x.isnumeric, "Invalid coord"
+        assert target_y.isnumeric, "Invalid coord"
+        target_x = int(target_x)
+        target_y = int(target_y)
+        assert target_x <= DEFAULT_VISIBILY_DISTANCE * 2 + 1, "Invalid coord"
+        assert target_y <= DEFAULT_VISIBILY_DISTANCE * 2 + 1, "Invalid coord"
+        assert turn.origin_bullets > 0, "No bullets"
+        assert turn.origin_fuel > 0, "No fuel"
+    except AssertionError as e:
+        turn.notes = e.args[0]
+        turn.wrong_response = True
+        if turn.final_bullets < 0:
+            turn.final_bullets = 0
+        return action_skip_turn(game, turn)
+
+    environment = decode_environment(turn.sent_payload)
+    enemy_positions = [k for k, v in environment.get("by_coord", {}).items() if v == FOE_SYMBOL]
+    
+    if (target_x, target_y) in enemy_positions:
+        abs_position = _make_absolute_coord(
+            original_value=(turn.origin_position_x, turn.origin_position_y),
+            relative_position=(target_x, target_y)
+        )
+        turn = enemy_reached(game=game, turn=turn, position=abs_position)
+        turn.target_reached = True
+    return turn
+
+
+def enemy_reached(*, game: GameSession, turn: TurnRecord, position: tuple) -> TurnRecord:
+    x, y = position
+    damage_on_hit = DAMAGE_BY_BULLET
+    hit_player = Player(**get_players_in_area(window=(x, y, x, y))[0])
+    if hit_player.shield_mounted:
+        damage_on_hit = int(damage_on_hit * SHIELD_PROTECTION_PERCENTAGE / 100)
+    hit_player.health -= damage_on_hit
+    if dead_player(game=game, player=hit_player):
+        turn.final_victories = turn.origin_victories + 1
+        hit_player.health = 0
+    
+    save_doc(Databases.PLAYERS, hit_player)
+    return turn
 
 
 def decode_environment(payload: str) -> dict:
@@ -219,10 +319,6 @@ def decode_environment(payload: str) -> dict:
 
 
     return response
- 
-
-def encode_environment( environment: list[list[str]]) -> str:
-    raise NotImplementedError
 
 
 def register_event(game: GameSession, event_type: GameEventType, info: str | None = None):
@@ -233,10 +329,12 @@ def register_event(game: GameSession, event_type: GameEventType, info: str | Non
     )
     save_doc(Databases.BOARD_EVENTS, event)
 
+
 def remove_player_from_game(game: GameSession, bot_identifier: str) -> GameSession:
     game.current_players.remove(bot_identifier)
     save_doc(Databases.GAMES, game)
     return game
+
 
 def dead_player(game: GameSession, player: Player) -> bool:
     dead = player.health <= 0
@@ -270,6 +368,7 @@ def fight_by_collision(game: GameSession, turn: TurnRecord, target_player: Playe
     if dead_target:
         turn.final_victories = turn.origin_victories + 1
     return turn
+
 
 def wall_collision_damage(game: GameSession, turn: TurnRecord) -> TurnRecord:
     damage = DAMAGE_BY_HIT
@@ -307,13 +406,14 @@ def _find_a_new_position(coord: tuple, occupied_positions: set) -> tuple:
             new_x, new_y = 0, 0
     return (new_x, new_y)
 
+
 def manage_enemy_collision(*,
                            game: GameSession,
                            turn: TurnRecord,
                            coord: tuple) -> TurnRecord:
     _turn = turn
     x, y = coord
-    hit_player = Player(**get_players_in_area(window=(x, y, x, y)))
+    hit_player = Player(**get_players_in_area(window=(x, y, x, y))[0])
     _turn = fight_by_collision(
         game=game,
         turn=turn,
@@ -327,18 +427,20 @@ def manage_enemy_collision(*,
 
     return _turn
 
+
 def dump_turn_to_botstatus(*, game: GameSession,
                               player: Player,
                               turn: TurnRecord) -> None:
-    player.bullets = turn.final_bullets
-    player.health = turn.final_health
-    player.fuel = turn.final_fuel
-    player.shield_mounted = turn.final_shield_enabled
-    player.position_x = turn.final_position_x
-    player.position_y = turn.final_position_y
-    player.victories = turn.final_victories
+    player.bullets = turn.final_bullets or 0 
+    player.health = turn.final_health or 0
+    player.fuel = turn.final_fuel if turn.final_fuel > 0 else 0
+    player.shield_mounted = turn.final_shield_enabled or False
+    player.position_x = turn.final_position_x or 0
+    player.position_y = turn.final_position_y or 0
+    player.victories = turn.final_victories or 0
     player.dead = dead_player(game, player)
     save_doc(Databases.PLAYERS, player)
+
 
 def manage_wall_collision(*,
                           game: GameSession,
@@ -346,7 +448,8 @@ def manage_wall_collision(*,
                           coord: tuple) -> TurnRecord:
     _turn = wall_collision_damage(game, turn)
     return _turn
-        
+
+
 def _make_absolute_coord(*, original_value: tuple, relative_position: tuple) -> tuple:
     _centered_x = relative_position[0] - DEFAULT_VISIBILY_DISTANCE
     _centered_y = relative_position[1] - DEFAULT_VISIBILY_DISTANCE
@@ -354,6 +457,7 @@ def _make_absolute_coord(*, original_value: tuple, relative_position: tuple) -> 
         original_value[0] + _centered_x,
         original_value[0] + _centered_y,
     )
+
 
 def _copy_turn_status_origin_to_final(turn: TurnRecord) -> None:
     turn.final_bullets = turn.origin_bullets
@@ -364,6 +468,17 @@ def _copy_turn_status_origin_to_final(turn: TurnRecord) -> None:
     turn.final_shield_enabled = turn.origin_shield_enabled
     turn.final_victories = turn.origin_victories
 
+
+def consumed_fueld(turn: TurnRecord, cells_moved: int):
+    fuel_consumption = FUEL_CONSUMED_BY_TURN_WITH_SHIELD if \
+        turn.origin_shield_enabled else FUEL_CONSUMED_BY_TURN
+    if cells_moved > 2:
+        consumed_fuel = (fuel_consumption + 1) ** (cells_moved - 1)
+    else:
+        consumed_fuel = (cells_moved or 1) * fuel_consumption
+    return consumed_fuel
+
+
 def action_move(game: GameSession, turn: TurnRecord) -> TurnRecord:
 
     def calculate_moved_cells(x, y):
@@ -371,43 +486,37 @@ def action_move(game: GameSession, turn: TurnRecord) -> TurnRecord:
         moved_y = abs(y - DEFAULT_VISIBILY_DISTANCE)
         return moved_x + moved_y
     
-    def consumed_fueld(cells_moved: int):
-        fuel_consumption = FUEL_CONSUMED_BY_TURN_WITH_SHIELD if \
-            turn.origin_shield_enabled else FUEL_CONSUMED_BY_TURN
-        if cells_moved > 2:
-            consumed_fuel = (fuel_consumption + 1) ** (cells_moved - 1)
-        else:
-            consumed_fuel = (cells_moved or 1) * fuel_consumption
-        return consumed_fuel
-
     turn.action = ActionOfBot.MOVE.value
     _copy_turn_status_origin_to_final(turn)
+    turn.final_fuel = None  # in case wrong response, so skip decrement it
 
-    cmd = turn.received_response[:3]
+    cmd = turn.received_response[:3] if turn.received_response else "XXX"
     x, y = cmd[1], cmd[2]
 
     try:
-        assert x.isnumeric
-        assert y.isnumeric
+        assert x.isnumeric, "Invalid coord"
+        assert y.isnumeric, "Invalid coord"
         x = int(x)
         y = int(y)
-        assert x <= DEFAULT_VISIBILY_DISTANCE * 2 + 1
-        assert y <= DEFAULT_VISIBILY_DISTANCE * 2 + 1
-    except AssertionError:
+        assert x <= DEFAULT_VISIBILY_DISTANCE * 2 + 1, "Invalid coord"
+        assert y <= DEFAULT_VISIBILY_DISTANCE * 2 + 1, "Invalid coord"
+        assert turn.origin_fuel > 0, "No fuel"
+    except AssertionError as e:
+        turn.notes = e.args[0]
         turn.wrong_response = True
         return action_skip_turn(game, turn)
 
 
     cells_moved = calculate_moved_cells(x,y)
 
-    used_fuel = consumed_fueld(cells_moved)
+    used_fuel = consumed_fueld(turn, cells_moved)
     if turn.origin_fuel < used_fuel:
         turn.wrong_response = True
-        return action_skip_turn(turn)
+        return action_skip_turn(game=game, turn=turn)
     
     turn.final_fuel = turn.origin_fuel - used_fuel
     environment = decode_environment(turn.sent_payload)
-    occupied_positions = set(environment.get("by_coord").keys())
+    occupied_positions = set(environment.get("by_coord", {}).keys())
     
     collided_with = environment.get("by_coord", {}).get((x, y))
 
@@ -438,17 +547,51 @@ def action_move(game: GameSession, turn: TurnRecord) -> TurnRecord:
     turn.final_position_x, turn.final_position_y = abs_x, abs_y 
     return turn
 
+
 def action_refuel(game: GameSession, turn: TurnRecord) -> TurnRecord:
-    raise NotImplementedError
+    _copy_turn_status_origin_to_final(turn)
+    turn.action = ActionOfBot.REFUEL.value
+    used_fuel = consumed_fueld(turn, 0)
+    turn.final_fuel = turn.origin_fuel + REFUEL_BY_TURN - used_fuel
+    return turn
+
 
 def action_tools(game: GameSession, turn: TurnRecord) -> TurnRecord:
-    raise NotImplementedError
+    _copy_turn_status_origin_to_final(turn)
+    try:
+        assert turn.origin_fuel > 0, "No fuel"
+    except AssertionError as e:
+        turn.notes = e.args[0]
+        return action_skip_turn(game, turn)
+
+    turn.action = ActionOfBot.TOOLS.value
+    turn.final_health = turn.origin_health + REPAIR_BY_TURN
+    used_fuel = consumed_fueld(turn, 0)
+    turn.final_fuel = turn.origin_fuel - used_fuel
+    return turn
+
 
 def action_change_status_shield(game: GameSession, turn: TurnRecord) -> TurnRecord:
-    raise NotImplementedError
+    _copy_turn_status_origin_to_final(turn)
+    turn.action = ActionOfBot.SHIELD.value
+    turn.final_shield_enabled = not turn.origin_shield_enabled
+    used_fuel = consumed_fueld(turn, 0)
+    turn.final_fuel = turn.origin_fuel - used_fuel
+    return turn
+
 
 def action_load_bullet(game: GameSession, turn: TurnRecord) -> TurnRecord:
-    raise NotImplementedError
+    _copy_turn_status_origin_to_final(turn)
+    turn.action = ActionOfBot.LOAD.value
+    turn.final_bullets = turn.origin_bullets + RELOAD_BY_TURN
+    used_fuel = consumed_fueld(turn, 0)
+    turn.final_fuel = turn.origin_fuel - used_fuel
+    return turn
+
+
+def _save_turn_results(*, turn: TurnRecord) -> None:
+    save_doc(Databases.TURNS, turn)
+
 
 def process_response_of_player(*, 
                                game: GameSession,
@@ -473,25 +616,37 @@ def process_response_of_player(*,
             action = action_skip_turn
     executed_turn = action(game=game, turn=turn)
     dump_turn_to_botstatus(game=game, player=player, turn=turn)
-    save_doc(db=Databases.TURNS, document=executed_turn)
     return executed_turn
 
 
-def execute_loop(game: GameSession) -> Player:
+def save_game_status(game: GameSession):
+    save_doc(Databases.GAMES, game)
+
+
+def execute_loop(game: GameSession) -> str:
     game.current_turn = 0
     while not game.winner:
-        game_after_play = game
-        for player in game.current_players:
-            player_turn = play_next_turn(game)
-            game_after_play = process_response_of_player(game, player, player_turn)
-            if len(game_after_play.current_players) == 1:
-                game_after_play.winner = list(game_after_play.current_players)[0]
-                break
-            register_event(game_after_play, GameEventType.END_ROUND)
-        game = game_after_play               
+
+        player_turn = play_next_turn(game)
+        player = load_player(player_turn.bot_identifier)
+        played_turn = process_response_of_player(
+            game=game,
+            player=player,
+            turn=player_turn
+        )
+        _save_turn_results(turn=played_turn)
+        game.last_bot_played = player.bot_identifier
+        if len(game.current_players) == 1:
+            game.winner = list(game.current_players)[0]
+            break
+
+        game.current_turn = game.current_turn + 1      
+
+        if game.current_turn > DEFAULT_STOP_LIMIT:
+            raise Exception("Limit of turns reached")
         if game.current_turn > NORMAL_SIZE_LIMIT:
-            reduce_board_size(game)
-        save_doc(Databases.GAMES, game)
+            reduce_board_size(game=game, step_down=DECREMENT_AFTER_LIMIT)
+        save_game_status(game)
     return game.winner
             
 
@@ -499,7 +654,7 @@ def get_events(game: GameSession) -> list[GameEvent]:
     ...
 
 
-def play() -> Player:  # return winner
+def play() -> dict:
     all_players = _get_all_players()
     game, ongoing = start_new_game(players = all_players, width=100, height=100)
     if not ongoing:
