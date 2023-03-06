@@ -76,13 +76,13 @@ class PlayerLoader(BaseModel):
     _datetime: datetime = PrivateAttr(default_factory=datetime.now)
     _built: bool = False
 
-    @validator("avatar_b64")
-    def png_or_jpg_length_less_than_64k(cls, value):
-        if len(value) > 64000:
-            raise ValidationError("Avatar is too big", model=PlayerLoader)
-        if not value.startswith("data:image/jpeg;base64,") or value.startswith("data:image/png;base64,"):
-            raise ValidationError("Avatar must have a PNG or JPG", model=PlayerLoader)
-        return value
+    # @validator("avatar_b64")
+    # def png_or_jpg_length_less_than_64k(cls, value):
+    #     if len(value) > 64000:
+    #         raise ValidationError("Avatar is too big", model=PlayerLoader)
+    #     if not value.startswith("data:image/jpeg;base64,") or value.startswith("data:image/png;base64,"):
+    #         raise ValidationError("Avatar must have a PNG or JPG", model=PlayerLoader)
+    #     return value
 
 
 class TurnRecord(BaseModel):

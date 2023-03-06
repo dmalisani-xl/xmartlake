@@ -204,7 +204,6 @@ def randomize_positions(players: list[Player]):
         save_doc(Databases.PLAYERS, player)
 
 
-
 def reduce_board_size(*, game: GameSession, step_down:int) -> GameSession:
     vertical_window = (
         game.board_size_x - step_down,
@@ -244,7 +243,7 @@ def action_fire(game: GameSession, turn: TurnRecord) -> TurnRecord:
     cmd = turn.received_response[:3] if turn.received_response else "XXX"
     target_x, target_y = cmd[1], cmd[2]
     turn.final_bullets = turn.origin_bullets - 1  # If wrong response, lose a bullet
-    turn.final_fuel = turn.origin_fuel - consumed_fueld(turn, 0)
+    turn.final_fuel = turn.origin_fuel - consumed_fuel(turn, 0)
     try:
         assert target_x.isnumeric, "Invalid coord"
         assert target_y.isnumeric, "Invalid coord"
@@ -316,7 +315,6 @@ def decode_environment(payload: str) -> dict:
         "walls": walls, 
         "by_coord": by_coord
     }
-
 
     return response
 
@@ -469,7 +467,7 @@ def _copy_turn_status_origin_to_final(turn: TurnRecord) -> None:
     turn.final_victories = turn.origin_victories
 
 
-def consumed_fueld(turn: TurnRecord, cells_moved: int):
+def consumed_fuel(turn: TurnRecord, cells_moved: int):
     fuel_consumption = FUEL_CONSUMED_BY_TURN_WITH_SHIELD if \
         turn.origin_shield_enabled else FUEL_CONSUMED_BY_TURN
     if cells_moved > 2:
@@ -509,7 +507,7 @@ def action_move(game: GameSession, turn: TurnRecord) -> TurnRecord:
 
     cells_moved = calculate_moved_cells(x,y)
 
-    used_fuel = consumed_fueld(turn, cells_moved)
+    used_fuel = consumed_fuel(turn, cells_moved)
     if turn.origin_fuel < used_fuel:
         turn.wrong_response = True
         return action_skip_turn(game=game, turn=turn)
@@ -551,7 +549,7 @@ def action_move(game: GameSession, turn: TurnRecord) -> TurnRecord:
 def action_refuel(game: GameSession, turn: TurnRecord) -> TurnRecord:
     _copy_turn_status_origin_to_final(turn)
     turn.action = ActionOfBot.REFUEL.value
-    used_fuel = consumed_fueld(turn, 0)
+    used_fuel = consumed_fuel(turn, 0)
     turn.final_fuel = turn.origin_fuel + REFUEL_BY_TURN - used_fuel
     return turn
 
@@ -566,7 +564,7 @@ def action_tools(game: GameSession, turn: TurnRecord) -> TurnRecord:
 
     turn.action = ActionOfBot.TOOLS.value
     turn.final_health = turn.origin_health + REPAIR_BY_TURN
-    used_fuel = consumed_fueld(turn, 0)
+    used_fuel = consumed_fuel(turn, 0)
     turn.final_fuel = turn.origin_fuel - used_fuel
     return turn
 
@@ -575,7 +573,7 @@ def action_change_status_shield(game: GameSession, turn: TurnRecord) -> TurnReco
     _copy_turn_status_origin_to_final(turn)
     turn.action = ActionOfBot.SHIELD.value
     turn.final_shield_enabled = not turn.origin_shield_enabled
-    used_fuel = consumed_fueld(turn, 0)
+    used_fuel = consumed_fuel(turn, 0)
     turn.final_fuel = turn.origin_fuel - used_fuel
     return turn
 
@@ -584,7 +582,7 @@ def action_load_bullet(game: GameSession, turn: TurnRecord) -> TurnRecord:
     _copy_turn_status_origin_to_final(turn)
     turn.action = ActionOfBot.LOAD.value
     turn.final_bullets = turn.origin_bullets + RELOAD_BY_TURN
-    used_fuel = consumed_fueld(turn, 0)
+    used_fuel = consumed_fuel(turn, 0)
     turn.final_fuel = turn.origin_fuel - used_fuel
     return turn
 

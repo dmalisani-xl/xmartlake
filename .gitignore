@@ -1,7 +1,9 @@
 .DS_Store
-_pycache__/
+*/**/*_pycache__
+
 *.py[cod]
 *$py.class
+*/**/*.pyc
 
 cov.xml
 notes.txt

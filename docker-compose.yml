@@ -21,15 +21,32 @@ services:
     depends_on:
       - mongo
 
-  xmartlake-api:
-    container_name: xmartlake-api
+  bots_supervisor:
+    build:
+      context: ./bots_supervisor
+    ports:
+      - "50051:50051"
+
+  bots_builder:
+    container_name: bots_builder
+    build:
+      context: ./bots_builder
+    ports:
+      - "50050:50050"
+    privileged: true
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+  
+  xmartlake_api:
+    container_name: xmartlake_api
     build:
       context: ./coordinator
     ports:
       - 7000:7000
-
     environment:
       MONGO_CONNECTION_STRING: mongodb://admin:admin@mongo:27017/xmartlake
 
     depends_on:
       - mongo
+      - bots_supervisor

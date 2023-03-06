@@ -3,3 +3,8 @@ pymongo[srv]~=4.0.1
 uvicorn
 email-validator
 pydantic[email]
+grpcio==1.51.3 
+grpcio-tools==1.51.3 
+
+#DEV
+pytest-env
