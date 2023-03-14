@@ -1,10 +1,13 @@
+import os
 import grpc
 import bots_pb2
 import bots_pb2_grpc
 
+SUPERVISOR_ADDRESS = os.environ["SUPERVISOR_ADDRESS"]
+BUILDER_ADDRESS = os.environ["BUILDER_ADDRESS"]
 
 def call_to_bot():
-    with grpc.insecure_channel("bots_supervisor:50051") as channel:
+    with grpc.insecure_channel(SUPERVISOR_ADDRESS) as channel:
         stub = bots_pb2_grpc.BotManagerStub(channel=channel)
         request = bots_pb2.CallToBot(botId="mybot", parameter="XXFFXX")
         response = stub.call(request)
@@ -12,7 +15,7 @@ def call_to_bot():
         return response.response
 
 def build_image(bot_id: str, language: str, code: str) -> str:
-    with grpc.insecure_channel("bots_builder:50050") as channel:
+    with grpc.insecure_channel(BUILDER_ADDRESS) as channel:
         stub = bots_pb2_grpc.BuildManagerStub(channel=channel)
         request = bots_pb2.BuildRequest(
             botId=bot_id,
@@ -28,7 +31,7 @@ def build_image(bot_id: str, language: str, code: str) -> str:
 
 
 def ping_to_builder() -> str:
-    with grpc.insecure_channel("bots_builder:50050") as channel:
+    with grpc.insecure_channel(BUILDER_ADDRESS) as channel:
         stub = bots_pb2_grpc.BuildManagerStub(channel=channel)
         request = bots_pb2.EmptyMessage()
         try:
@@ -40,7 +43,7 @@ def ping_to_builder() -> str:
 
 
 def ping_to_manager() -> str:
-    with grpc.insecure_channel("bots_supervisor:50051") as channel:
+    with grpc.insecure_channel(SUPERVISOR_ADDRESS) as channel:
         stub = bots_pb2_grpc.BotManagerStub(channel=channel)
         request = bots_pb2.EmptyMessage()
         try:

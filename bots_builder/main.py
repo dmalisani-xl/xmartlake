@@ -9,6 +9,8 @@ import logging
 from concurrent import futures
 from base_reference import source_info
 
+GRPC_PORT = os.environ["GRPC_PORT"]
+
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(sys.stdout)
@@ -67,9 +69,9 @@ class Building(bots_pb2_grpc.BuildManager):
 def main():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
     bots_pb2_grpc.add_BuildManagerServicer_to_server(Building(), server)
-    server.add_insecure_port('[::]:50050')
+    server.add_insecure_port(f'[::]:{GRPC_PORT}')
     server.start()
-    print("GRPC server running on builder")
+    print(f"GRPC server running on builder. Port: {GRPC_PORT}")
     server.wait_for_termination()
 
 if __name__ == "__main__":

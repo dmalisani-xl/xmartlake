@@ -1,0 +1,44 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: builder
+spec:
+  selector:
+    matchLabels:
+      app: builder
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: builder
+    spec:
+      containers:
+      - name: builder
+        image: builder:latest
+        imagePullPolicy: Never
+        volumeMounts:
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
+        ports:
+        - containerPort: 50050
+          name: grpc
+        env:
+        - name: GRPC_PORT
+          value: "50050"
+      volumes:
+      - name: docker-socket
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: builder
+spec:
+  selector:
+    app: builder
+  ports:
+  - name: grpc
+    port: 50050
+    targetPort: grpc

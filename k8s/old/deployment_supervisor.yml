@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: supervisor
+spec:
+  selector:
+    matchLabels:
+      app: supervisor
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: supervisor
+    spec:
+      containers:
+      - name:  supervisor
+        image: supervisor:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 50050
+        env:
+        - name: GRPC_PORT
+          value: "50050"

@@ -20,8 +20,8 @@ async def root():
 async def register(body: PlayerLoader):
     return build_image(bot_id=body.bot_identifier, language=body.language, code=body.code)
 
-@app.get("/x")
-async def register():
+@app.get("/call")
+async def call():
     return call_to_bot()
 
 

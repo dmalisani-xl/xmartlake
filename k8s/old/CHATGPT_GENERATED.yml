@@ -1,0 +1,72 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: supervisor
+spec:
+  containers:
+  - name: supervisor
+    image: supervisor:latest
+    imagePullPolicy: Never
+    ports:
+    - containerPort: 50050
+    env:
+    - name: GRPC_PORT
+      value: "50050"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: controller
+  template:
+    metadata:
+      labels:
+        app: controller
+  spec:
+    containers:
+    - name: controller
+      image: coordinator:latest
+      imagePullPolicy: Never
+      ports:
+      - name: http-external
+        containerPort: 80
+      - name: http-internal
+        containerPort: 7000
+      env:
+      - name: SUPERVISOR_ADDRESS
+        value: "supervisor:50050"
+      - name: BUILDER_ADDRESS
+        value: "builder:50050"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: builder
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: builder
+  template:
+    metadata:
+      labels:
+        app: builder
+  volumes:
+  - name: docker-socket
+    hostPath:
+      path: /var/run/docker.sock
+    spec:
+      containers:
+      - name: builder
+        image: builder:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 50050
+        env:
+        - name: GRPC_PORT
+          value: "50050"

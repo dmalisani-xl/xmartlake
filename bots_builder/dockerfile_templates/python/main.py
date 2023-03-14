@@ -5,7 +5,7 @@ import playturn_pb2_grpc
 from concurrent import futures
 from os import environ
 
-GRPC_PORT = environ["GRPC_PORT"]
+GRPC_PORT = environ["GRPC_PORT", 50000]
 IMAGE_NAME = environ.get("IMAGE_NAME", "anonymous")
 
 class CallProcess(playturn_pb2_grpc.TurnCallerServicer):
@@ -20,7 +20,7 @@ class CallProcess(playturn_pb2_grpc.TurnCallerServicer):
 def main():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=2))
     playturn_pb2_grpc.add_TurnCallerServicer_to_server(CallProcess(), server)
-    server.add_insecure_port('[::]:50000')
+    server.add_insecure_port(f'[::]:{GRPC_PORT}')
     server.start()
     print(f"GRPC server running on {IMAGE_NAME}")
     server.wait_for_termination()
