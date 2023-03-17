@@ -36,11 +36,12 @@ def put_code_on_file(language: str, code_b64: str):
 
 def build_image(language: str, tag: str):
     logger.debug(f"Start to build image {tag}")
-    a, _ = docker_client.images.build(
+    result, _ = docker_client.images.build(
         path=source_info[language]['base_path'],
-        tag=tag
+        tag=tag,
+        nocache=True
     )
-    return a.id
+    return result.id
 
 
 

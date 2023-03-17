@@ -24,8 +24,8 @@ class BotManager(bots_pb2_grpc.BotManagerServicer):
     def call(self, request, context):
         bot_id = request.botId
         parameter = request.parameter
-        call_to_bot(bot_id=bot_id, parameter=parameter)
-        response = bots_pb2.BotResponse(response="fake_response_of_bot")
+        response_of_bot = call_to_bot(bot_id=bot_id, parameter=parameter)
+        response = bots_pb2.BotResponse(response=response_of_bot)
         return response
 
 def main():

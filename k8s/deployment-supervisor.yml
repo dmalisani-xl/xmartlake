@@ -12,6 +12,7 @@ spec:
       labels:
         app: supervisor
     spec:
+      serviceAccountName: supervisor-sa 
       containers:
       - name: supervisor
         image: supervisor:latest
@@ -26,15 +27,8 @@ spec:
           value: "supervisor:50050"
         - name: BUILDER_ADDRESS
           value: "builder:50050"
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: supervisor
-spec:
-  selector:
-    app: supervisor
-  ports:
-  - name: grpc
-    port: 50050
-    targetPort: grpc
+      volumes:
+      - name: docker-socket
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket

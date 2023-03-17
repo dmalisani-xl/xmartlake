@@ -1,26 +1,24 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: controller-deployment
+  name: coordinator
 spec:
-  replicas: 1
   selector:
     matchLabels:
-      app: controller
+      app: coordinator
+  replicas: 1
   template:
     metadata:
       labels:
-        app: controller
+        app: coordinator
     spec:
       containers:
-      - name: controller-container
+      - name: coordinator
         image: coordinator:latest
         imagePullPolicy: Never
         ports:
-        - name: http-external
-          containerPort: 80
-        - name: http-internal
-          containerPort: 7000
+        - containerPort: 7000
+          name: http
         env:
         - name: SUPERVISOR_ADDRESS
           value: "supervisor:50050"
