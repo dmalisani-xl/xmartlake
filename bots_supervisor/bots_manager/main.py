@@ -93,8 +93,8 @@ def delete_bot_deployment(bot_id: str):
         name=deployment_name,
         namespace=NAMESPACE,
         body=client.V1DeleteOptions(
-            propagation_policy='Foreground',
-            grace_period_seconds=5
+            propagation_policy='Orphan',
+            grace_period_seconds=0
         )
     )
 
