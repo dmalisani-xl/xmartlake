@@ -9,6 +9,8 @@ import logging
 from concurrent import futures
 from base_reference import source_info
 
+GRPC_PORT = os.environ["GRPC_PORT"]
+
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 handler = logging.StreamHandler(sys.stdout)
@@ -34,11 +36,12 @@ def put_code_on_file(language: str, code_b64: str):
 
 def build_image(language: str, tag: str):
     logger.debug(f"Start to build image {tag}")
-    a, _ = docker_client.images.build(
+    result, _ = docker_client.images.build(
         path=source_info[language]['base_path'],
-        tag=tag
+        tag=tag,
+        nocache=True
     )
-    return a.id
+    return result.id
 
 
 
@@ -67,9 +70,9 @@ class Building(bots_pb2_grpc.BuildManager):
 def main():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=4))
     bots_pb2_grpc.add_BuildManagerServicer_to_server(Building(), server)
-    server.add_insecure_port('[::]:50050')
+    server.add_insecure_port(f'[::]:{GRPC_PORT}')
     server.start()
-    print("GRPC server running on builder")
+    print(f"GRPC server running on builder. Port: {GRPC_PORT}")
     server.wait_for_termination()
 
 if __name__ == "__main__":

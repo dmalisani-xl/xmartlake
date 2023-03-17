@@ -1,0 +1,26 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: coordinator
+spec:
+  selector:
+    matchLabels:
+      app: coordinator
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: coordinator
+    spec:
+      containers:
+      - name: coordinator
+        image: coordinator:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 7000
+          name: http
+        env:
+        - name: SUPERVISOR_ADDRESS
+          value: "supervisor:50050"
+        - name: BUILDER_ADDRESS
+          value: "builder:50050"
