@@ -6,15 +6,18 @@ import bots_pb2_grpc
 SUPERVISOR_ADDRESS = os.environ["SUPERVISOR_ADDRESS"]
 BUILDER_ADDRESS = os.environ["BUILDER_ADDRESS"]
 
-def call_to_bot():
+
+def call_to_bot(bot_id: str, parameter: str):
     with grpc.insecure_channel(SUPERVISOR_ADDRESS) as channel:
         stub = bots_pb2_grpc.BotManagerStub(channel=channel)
-        request = bots_pb2.CallToBot(botId="mybot", parameter="XXFFXX")
+        request = bots_pb2.CallToBot(botId=bot_id, parameter=parameter)
         response = stub.call(request)
         print(f"Received: {response.response}")
         return response.response
 
+
 def build_image(bot_id: str, language: str, code: str) -> str:
+    # TODO: Register bot in mongo
     with grpc.insecure_channel(BUILDER_ADDRESS) as channel:
         stub = bots_pb2_grpc.BuildManagerStub(channel=channel)
         request = bots_pb2.BuildRequest(
