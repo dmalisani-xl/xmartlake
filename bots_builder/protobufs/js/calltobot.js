@@ -1,17 +1,14 @@
-// source: playturn.proto
+// source: bots.proto
 /**
  * @fileoverview
  * @enhanceable
- * @suppress {missingRequire} reports error on implicit type usages.
  * @suppress {messageConventions} JS Compiler reports an error if a variable or
  *     field starts with 'MSG_' and isn't a translatable message.
  * @public
  */
 // GENERATED CODE -- DO NOT EDIT!
-/* eslint-disable */
-// @ts-nocheck
 
-goog.provide('proto.EmptyMessage');
+goog.provide('proto.CallToBot');
 
 goog.require('jspb.BinaryReader');
 goog.require('jspb.BinaryWriter');
@@ -27,16 +24,16 @@ goog.require('jspb.Message');
  * @extends {jspb.Message}
  * @constructor
  */
-proto.EmptyMessage = function(opt_data) {
+proto.CallToBot = function(opt_data) {
   jspb.Message.initialize(this, opt_data, 0, -1, null, null);
 };
-goog.inherits(proto.EmptyMessage, jspb.Message);
+goog.inherits(proto.CallToBot, jspb.Message);
 if (goog.DEBUG && !COMPILED) {
   /**
    * @public
    * @override
    */
-  proto.EmptyMessage.displayName = 'proto.EmptyMessage';
+  proto.CallToBot.displayName = 'proto.CallToBot';
 }
 
 
@@ -54,8 +51,8 @@ if (jspb.Message.GENERATE_TO_OBJECT) {
  *     http://goto/soy-param-migration
  * @return {!Object}
  */
-proto.EmptyMessage.prototype.toObject = function(opt_includeInstance) {
-  return proto.EmptyMessage.toObject(opt_includeInstance, this);
+proto.CallToBot.prototype.toObject = function(opt_includeInstance) {
+  return proto.CallToBot.toObject(opt_includeInstance, this);
 };
 
 
@@ -64,13 +61,14 @@ proto.EmptyMessage.prototype.toObject = function(opt_includeInstance) {
  * @param {boolean|undefined} includeInstance Deprecated. Whether to include
  *     the JSPB instance for transitional soy proto support:
  *     http://goto/soy-param-migration
- * @param {!proto.EmptyMessage} msg The msg instance to transform.
+ * @param {!proto.CallToBot} msg The msg instance to transform.
  * @return {!Object}
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.EmptyMessage.toObject = function(includeInstance, msg) {
+proto.CallToBot.toObject = function(includeInstance, msg) {
   var f, obj = {
-
+    botid: jspb.Message.getFieldWithDefault(msg, 1, ""),
+    parameter: jspb.Message.getFieldWithDefault(msg, 2, "")
   };
 
   if (includeInstance) {
@@ -84,29 +82,37 @@ proto.EmptyMessage.toObject = function(includeInstance, msg) {
 /**
  * Deserializes binary data (in protobuf wire format).
  * @param {jspb.ByteSource} bytes The bytes to deserialize.
- * @return {!proto.EmptyMessage}
+ * @return {!proto.CallToBot}
  */
-proto.EmptyMessage.deserializeBinary = function(bytes) {
+proto.CallToBot.deserializeBinary = function(bytes) {
   var reader = new jspb.BinaryReader(bytes);
-  var msg = new proto.EmptyMessage;
-  return proto.EmptyMessage.deserializeBinaryFromReader(msg, reader);
+  var msg = new proto.CallToBot;
+  return proto.CallToBot.deserializeBinaryFromReader(msg, reader);
 };
 
 
 /**
  * Deserializes binary data (in protobuf wire format) from the
  * given reader into the given message object.
- * @param {!proto.EmptyMessage} msg The message object to deserialize into.
+ * @param {!proto.CallToBot} msg The message object to deserialize into.
  * @param {!jspb.BinaryReader} reader The BinaryReader to use.
- * @return {!proto.EmptyMessage}
+ * @return {!proto.CallToBot}
  */
-proto.EmptyMessage.deserializeBinaryFromReader = function(msg, reader) {
+proto.CallToBot.deserializeBinaryFromReader = function(msg, reader) {
   while (reader.nextField()) {
     if (reader.isEndGroup()) {
       break;
     }
     var field = reader.getFieldNumber();
     switch (field) {
+    case 1:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setBotid(value);
+      break;
+    case 2:
+      var value = /** @type {string} */ (reader.readString());
+      msg.setParameter(value);
+      break;
     default:
       reader.skipField();
       break;
@@ -120,9 +126,9 @@ proto.EmptyMessage.deserializeBinaryFromReader = function(msg, reader) {
  * Serializes the message to binary data (in protobuf wire format).
  * @return {!Uint8Array}
  */
-proto.EmptyMessage.prototype.serializeBinary = function() {
+proto.CallToBot.prototype.serializeBinary = function() {
   var writer = new jspb.BinaryWriter();
-  proto.EmptyMessage.serializeBinaryToWriter(this, writer);
+  proto.CallToBot.serializeBinaryToWriter(this, writer);
   return writer.getResultBuffer();
 };
 
@@ -130,12 +136,62 @@ proto.EmptyMessage.prototype.serializeBinary = function() {
 /**
  * Serializes the given message to binary data (in protobuf wire
  * format), writing to the given BinaryWriter.
- * @param {!proto.EmptyMessage} message
+ * @param {!proto.CallToBot} message
  * @param {!jspb.BinaryWriter} writer
  * @suppress {unusedLocalVariables} f is only used for nested messages
  */
-proto.EmptyMessage.serializeBinaryToWriter = function(message, writer) {
+proto.CallToBot.serializeBinaryToWriter = function(message, writer) {
   var f = undefined;
+  f = message.getBotid();
+  if (f.length > 0) {
+    writer.writeString(
+      1,
+      f
+    );
+  }
+  f = message.getParameter();
+  if (f.length > 0) {
+    writer.writeString(
+      2,
+      f
+    );
+  }
+};
+
+
+/**
+ * optional string botId = 1;
+ * @return {string}
+ */
+proto.CallToBot.prototype.getBotid = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 1, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.CallToBot} returns this
+ */
+proto.CallToBot.prototype.setBotid = function(value) {
+  return jspb.Message.setProto3StringField(this, 1, value);
+};
+
+
+/**
+ * optional string parameter = 2;
+ * @return {string}
+ */
+proto.CallToBot.prototype.getParameter = function() {
+  return /** @type {string} */ (jspb.Message.getFieldWithDefault(this, 2, ""));
+};
+
+
+/**
+ * @param {string} value
+ * @return {!proto.CallToBot} returns this
+ */
+proto.CallToBot.prototype.setParameter = function(value) {
+  return jspb.Message.setProto3StringField(this, 2, value);
 };
 
 
