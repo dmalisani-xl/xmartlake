@@ -35,6 +35,12 @@ def put_code_on_file(language: str, code_b64: str):
 
 
 def build_image(language: str, tag: str):
+    logger.debug(f"Deleting previous version")
+    try:
+        result, _ = docker_client.images.remove(tag)
+    except Exception as e:
+        logger.error(f"Error deleting image: {e}")
+
     logger.debug(f"Start to build image {tag}")
     result, _ = docker_client.images.build(
         path=source_info[language]['base_path'],

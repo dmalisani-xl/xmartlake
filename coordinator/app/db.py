@@ -4,7 +4,8 @@ from pymongo import MongoClient
 
 CONNECTION_STRING = environ["MONGO_CONNECTION_STRING"]
 client = MongoClient(CONNECTION_STRING)
-database = client["xmartlake"]
+database_name = environ["MONGO_DBNAME"]
+database = client[database_name]
 
 class Databases(Enum):
     GAMES = "GAMES"
@@ -38,8 +39,19 @@ def get_players_in_area(window: tuple[int, int, int, int]) -> list[dict]:
     )
     return [r for r in results]
 
+
 def get_running_games() -> list:
     results = database[Databases.GAMES.value].find(
         {"end_time": None}
     )
+    return [r for r in results]
+
+
+def load_events_for_game():
+    results = database[Databases.BOARD_EVENTS.value].find()
+    return [r for r in results]
+
+
+def load_turns_for_game():
+    results = database[Databases.TURNS.value].find()
     return [r for r in results]

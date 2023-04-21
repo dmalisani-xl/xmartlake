@@ -1,9 +1,11 @@
 from fastapi import (
     FastAPI,
-    status
+    status,
+    HTTPException
 )
 from app.models import PlayerLoader
 from app.rpc.grpc_main import build_image, call_to_bot, ping_to_builder, ping_to_manager
+from app.game import play
 VERSION = "0.0.1"
 app = FastAPI(
     title="XmartLake coordinator",
@@ -33,3 +35,10 @@ async def ping_builder():
 @app.get("/ping-manager")
 async def ping_manager():
     return ping_to_manager()
+
+@app.get("/play")
+async def playgame():
+    try:
+        return play()
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=e.args[0])

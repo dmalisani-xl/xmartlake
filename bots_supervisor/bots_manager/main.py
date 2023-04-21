@@ -1,4 +1,4 @@
-import asyncio
+import threading
 import grpc
 import bots_pb2
 import bots_pb2_grpc
@@ -69,7 +69,6 @@ def send_when_ready(bot_id: str, parameter: str) -> str:
     try:
         call_parameter = bots_pb2.TurnMessage(parameter=parameter)
         print(call_parameter)
-        print(dir(stub))
         response = stub.play(call_parameter)
         print(response)
     except Exception as e:
@@ -88,12 +87,14 @@ def create_new_bot(bot_id: str):
 def delete_bot_deployment(bot_id: str):
     # Delete the deployment
     deployment_name = f'deployment-{bot_id}'
+    # delete_replica_sets(deployment_name)
+
     print("------ Destroying deployment ------")
     k8s_apps_v1.delete_namespaced_deployment(
         name=deployment_name,
         namespace=NAMESPACE,
         body=client.V1DeleteOptions(
-            propagation_policy='Orphan',
+            propagation_policy='Foreground',
             grace_period_seconds=0
         )
     )
@@ -108,6 +109,20 @@ def delete_bot_deployment(bot_id: str):
         time.sleep(1)
 
 
+def delete_replica_sets(deployment_name: str):
+    label_selector = f'app={deployment_name}'
+    replicasets = k8s_apps_v1.list_namespaced_replica_set(namespace=NAMESPACE, label_selector=label_selector)
+    for replicaset in replicasets.items:
+        replicaset_name = replicaset.metadata.name
+        print(f"Deleting replicaset {replicaset_name}")
+        k8s_apps_v1.delete_namespaced_replica_set(
+            name=replicaset_name,
+            namespace=NAMESPACE,
+            body=client.V1DeleteOptions(
+                propagation_policy='Orphan',
+                grace_period_seconds=0
+            )
+        )
 def call_to_bot(bot_id: str, parameter: str) -> str:
     try:
         create_new_bot(bot_id)
@@ -115,7 +130,9 @@ def call_to_bot(bot_id: str, parameter: str) -> str:
     except RuntimeError:
         print("Pod is not working")
         response = "XXX"
-    delete_bot_deployment(bot_id)
+
+    delete_thread = threading.Thread(target=delete_bot_deployment, args=(bot_id,))
+    delete_thread.start()
     print(f"Returning response: {response}")
     return response
 

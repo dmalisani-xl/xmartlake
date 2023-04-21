@@ -13,14 +13,18 @@ spec:
         app: coordinator
     spec:
       containers:
-      - name: coordinator
-        image: coordinator:latest
-        imagePullPolicy: Never
-        ports:
-        - containerPort: 7000
-          name: http
-        env:
-        - name: SUPERVISOR_ADDRESS
-          value: "supervisor:50050"
-        - name: BUILDER_ADDRESS
-          value: "builder:50050"
+        - name: coordinator
+          image: coordinator:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 7000
+              name: http
+          env:
+            - name: SUPERVISOR_ADDRESS
+              value: "supervisor:50050"
+            - name: BUILDER_ADDRESS
+              value: "builder:50050"
+            - name: MONGO_CONNECTION_STRING
+              value: "mongodb://admin:admin@mongo:27017/xmartlake?authSource=admin"
+            - name: MONGO_DBNAME
+              value: "xmartlake"

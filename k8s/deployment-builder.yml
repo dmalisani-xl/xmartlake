@@ -13,20 +13,20 @@ spec:
         app: builder
     spec:
       containers:
-      - name: builder
-        image: builder:latest
-        imagePullPolicy: Never
-        volumeMounts:
-        - name: docker-socket
-          mountPath: /var/run/docker.sock
-        ports:
-        - containerPort: 50050
-          name: grpc
-        env:
-        - name: GRPC_PORT
-          value: "50050"
+        - name: builder
+          image: builder:latest
+          imagePullPolicy: Never
+          volumeMounts:
+            - name: docker-socket
+              mountPath: /var/run/docker.sock
+          ports:
+            - containerPort: 50050
+              name: grpc
+          env:
+            - name: GRPC_PORT
+              value: "50050"
       volumes:
-      - name: docker-socket
-        hostPath:
-          path: /var/run/docker.sock
-          type: Socket
+        - name: docker-socket
+          hostPath:
+            path: /var/run/docker.sock
+            type: Socket

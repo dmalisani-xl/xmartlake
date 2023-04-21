@@ -27,7 +27,9 @@ from .db import (
     save_doc,
     Databases,
     get_players_in_area,
-    get_running_games
+    get_running_games,
+    load_events_for_game,
+    load_turns_for_game
 )
 
 from .models import (
@@ -361,6 +363,7 @@ def fight_by_collision(game: GameSession, turn: TurnRecord, target_player: Playe
     turn.final_health = turn.origin_health - damage_on_source_player
     target_player.health -= damage_on_target_player
     turn.hit = True
+    turn.hit_to = target_player.bot_identifier
     dead_target = dead_player(game=game, player=target_player)
     save_doc(Databases.PLAYERS, target_player)
     if dead_target:
@@ -649,14 +652,26 @@ def execute_loop(game: GameSession) -> str:
             
 
 def get_events(game: GameSession) -> list[GameEvent]:
-    ...
+    return load_events_for_game()
+
+
+def get_turns(game: GameSession) -> list[TurnRecord]:
+    return load_turns_for_game()
 
 
 def play() -> dict:
     all_players = _get_all_players()
+    if not all_players or len(all_players) < 2:
+        raise ValueError("There is no players registered for this game")
+
     game, ongoing = start_new_game(players = all_players, width=100, height=100)
     if not ongoing:
         randomize_positions(all_players)
     winner = execute_loop(game)
     events = get_events(game)
-    return {"winner": winner, "events": events}
+    turns = get_turns(game)
+    return {
+        "winner": winner,
+        "events": events,
+        "turns": turns
+    }

@@ -4,6 +4,8 @@ import logging
 import sys
 import bots_pb2
 import bots_pb2_grpc
+import asyncio
+
 from concurrent import futures
 from bots_manager.main import call_to_bot
 
@@ -35,6 +37,7 @@ def main():
     server.start()
     print(f"GRPC server running on supervisor. Port: {GRPC_PORT}")
     server.wait_for_termination()
+
 
 if __name__ == "__main__":
     main()
