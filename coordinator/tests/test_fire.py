@@ -56,6 +56,7 @@ PAYLOAD = "".join(ROWS)
 TURN = TurnRecord(
     bot_identifier="bot1",
     turn_number=1,
+    session_identifier="game_id",
     origin_position_x=PLAYER_1.position_x,
     origin_position_y=PLAYER_1.position_y,
     origin_bullets=PLAYER_1.bullets,

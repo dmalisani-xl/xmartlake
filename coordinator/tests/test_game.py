@@ -42,6 +42,7 @@ base_game = GameSession(
 base_turn = TurnRecord(
             bot_identifier="test",
             turn_number=1,
+            session_identifier="game_id",
             origin_bullets=10,
             origin_fuel=10,
             origin_health=10,

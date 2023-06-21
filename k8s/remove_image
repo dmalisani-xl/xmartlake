@@ -1,0 +1,10 @@
+
+echo Searching $1
+string=$(minikube image list --format=table | grep $1)
+
+echo $string
+IFS="|" read -ra values <<< "$string"
+
+image_hash=$(echo "${values[3]}")
+echo Removing $image_hash
+minikube image rm $image_hash

@@ -73,21 +73,23 @@ class PlayerLoader(BaseModel):
     email: EmailStr
     code: str
     avatar_b64: str
-    _datetime: datetime = PrivateAttr(default_factory=datetime.now)
-    _built: bool = False
+    creation_datetime: datetime = datetime.now()
+    built: bool = False
+    image_identifier: str
 
-    # @validator("avatar_b64")
-    # def png_or_jpg_length_less_than_64k(cls, value):
-    #     if len(value) > 64000:
-    #         raise ValidationError("Avatar is too big", model=PlayerLoader)
-    #     if not value.startswith("data:image/jpeg;base64,") or value.startswith("data:image/png;base64,"):
-    #         raise ValidationError("Avatar must have a PNG or JPG", model=PlayerLoader)
-    #     return value
+    @validator("avatar_b64")
+    def png_or_jpg_length_less_than_64k(cls, v):
+        if len(v) > 64000:
+            raise ValidationError("Avatar is too big", model=PlayerLoader)
+        if not v.startswith("data:image/jpeg;base64,") or v.startswith("data:image/png;base64,"):
+            raise ValidationError("Avatar must have a PNG or JPG", model=PlayerLoader)
+        return v
 
 
 class TurnRecord(BaseModel):
     turn_identifier: str = Field(default_factory=uuid4_generator)
     timestamp: datetime = Field(default_factory=datetime.now)
+    session_identifier: str
     bot_identifier: str
     turn_number: int
 

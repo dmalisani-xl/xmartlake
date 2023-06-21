@@ -1,11 +1,12 @@
 from fastapi import (
     FastAPI,
     status,
-    HTTPException
+    HTTPException,
+    logger
 )
 from app.models import PlayerLoader
 from app.rpc.grpc_main import build_image, call_to_bot, ping_to_builder, ping_to_manager
-from app.game import play
+from app.game import play, register_new_player, find_existent_bot
 VERSION = "0.0.1"
 app = FastAPI(
     title="XmartLake coordinator",
@@ -20,7 +21,17 @@ async def root():
 
 @app.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(body: PlayerLoader):
-    return build_image(bot_id=body.bot_identifier, language=body.language, code=body.code)
+    exist, same_email = find_existent_bot(
+        bot_id=body.bot_identifier,
+        email=body.email
+    )
+    if exist and not same_email:
+        raise HTTPException(f"Identifier {body.bot_identifier} already exists")
+
+    logger.debug(f"Building {body.bot_identifier}")
+    image_id = build_image(bot_id=body.bot_identifier, language=body.language, code=body.code)
+    register_new_player(body, image_id)
+    return image_id
 
 @app.get("/call")
 async def call(bot_id: str, parameter: str):

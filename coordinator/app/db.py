@@ -47,11 +47,23 @@ def get_running_games() -> list:
     return [r for r in results]
 
 
-def load_events_for_game():
-    results = database[Databases.BOARD_EVENTS.value].find()
+def get_registered_players(only_alive: True) -> list:
+    filters = {"dead": False} if only_alive else {}
+    results = database[Databases.PLAYERS.value].find(filters)
+    return [r for r in results]  
+
+
+def get_bots(bot_id: str | None) -> list:
+    filters = {"bot_identifier": bot_id} if bot_id else {}
+    results = database[Databases.PLAYERS.value].find(filters)
+    return [r for r in results]  
+
+
+def load_events_for_game(game_id):
+    results = database[Databases.BOARD_EVENTS.value].find(filter={"game_id": game_id})
     return [r for r in results]
 
 
-def load_turns_for_game():
-    results = database[Databases.TURNS.value].find()
+def load_turns_for_game(game_id):
+    results = database[Databases.TURNS.value].find(filter={"game_id": game_id})
     return [r for r in results]

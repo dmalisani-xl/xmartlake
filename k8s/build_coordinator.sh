@@ -1,0 +1,1 @@
+docker build ../coordinator -t coordinator:latest

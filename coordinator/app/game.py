@@ -1,6 +1,7 @@
 from random import shuffle, choice
 from fastapi.logger import logger
-
+from app.rpc.grpc_main import call_to_bot
+# from app.models import PlayerLoader
 from app.settings import (
     DEFAULT_STOP_LIMIT,
     NORMAL_SIZE_LIMIT,
@@ -29,7 +30,9 @@ from .db import (
     get_players_in_area,
     get_running_games,
     load_events_for_game,
-    load_turns_for_game
+    load_turns_for_game,
+    get_registered_players,
+    get_bots
 )
 
 from .models import (
@@ -57,7 +60,7 @@ def start_new_game(*,
     players_id = {pyr.bot_identifier for pyr in players}
     list_players = list(players_id)
     shuffle(list_players)
-
+    logger.info(f"Starting game with {len(list_players)} players")
     session = GameSession(
         initial_players=players_id,
         current_players=players_id,
@@ -78,6 +81,20 @@ def load_ongoing_game() -> None | GameSession:
             logger.warning("There are many ongoing games")
         return GameSession(**ongoing[0])
     return None
+
+
+def find_existent_bot(bot_id: str, email: str) -> tuple[bool, bool]:
+    bots = get_bots(bot_id)
+    if not len(bots):
+        return False, False
+
+    return True, bots[0].email == email
+
+
+def register_new_player(registrant, image_id: str):
+    registrant.image_identifier = image_id
+    save_doc(Databases.BOTS, registrant)
+
 
 
 def _choice_next_player(session: GameSession) -> Player:
@@ -158,7 +175,7 @@ def stringfy_parameter(player: Player, environment: list[list[str]]):
 
 
 def call_to_bot(player: Player, parameter: str) -> str:
-    ...
+    return call_to_bot(player.bot_identifier, parameter)
 
 
 def play_next_turn(game: GameSession) -> TurnRecord:
@@ -167,6 +184,7 @@ def play_next_turn(game: GameSession) -> TurnRecord:
     turn_parameter = stringfy_parameter(player, environment)
     turn = TurnRecord(
         bot_identifier=player.bot_identifier,
+        session_identifier=game.session_identifier,
         turn_number=game.current_turn,
         origin_position_x=player.position_x,
         origin_position_y=player.position_y,
@@ -176,13 +194,14 @@ def play_next_turn(game: GameSession) -> TurnRecord:
         origin_victories=player.victories,
         sent_payload=turn_parameter
     )
+    logger.debug(f"Calling bot {player.bot_identifier} with {turn_parameter}")
     response = call_to_bot(player, turn_parameter)
     turn.received_response = response
     return turn
 
 
 def _get_all_players() -> list[Player]:
-    ...
+    return get_registered_players(True)
 
 
 def _board_coords_maker() -> list[tuple]:
@@ -652,11 +671,11 @@ def execute_loop(game: GameSession) -> str:
             
 
 def get_events(game: GameSession) -> list[GameEvent]:
-    return load_events_for_game()
+    return load_events_for_game(game._id)
 
 
 def get_turns(game: GameSession) -> list[TurnRecord]:
-    return load_turns_for_game()
+    return load_turns_for_game(game._id)
 
 
 def play() -> dict:

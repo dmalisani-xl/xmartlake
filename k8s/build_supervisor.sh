@@ -1,0 +1,1 @@
+docker build ../bots_supervisor -t supervisor:latest
