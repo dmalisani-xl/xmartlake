@@ -77,6 +77,19 @@ class PlayerLoader(BaseModel):
     built: bool = False
     image_identifier: str
 
+    class Config:
+        fields = {"built": {"exclude": True}, "image_identifier": {"exclude": True}}
+
+        schema_extra = {
+            "example": {
+                "language": "python",
+                "name": "John Doe",
+                "email": "johndoe@example.com",
+                "code": "<base64-encoded-function>",
+                "avatar_b64": "<base64-encoded-string>",
+            }
+        }
+
     @validator("avatar_b64")
     def png_or_jpg_length_less_than_64k(cls, v):
         if len(v) > 64000:
