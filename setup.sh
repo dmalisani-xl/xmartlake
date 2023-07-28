@@ -13,3 +13,7 @@ kubectl apply -f k8s/node-reader-role-binding.yaml
 kubectl apply -f k8s/sevice-builder.yml
 kubectl apply -f k8s/service-supervisor.yml
 kubectl apply -f k8s/service-coordinator.yml
+
+kubectl config set-context --current --namespace=xmartlake
+pod_name=$(kubectl get pods -l app=coordinator -o=jsonpath='{.items[*].metadata.name}')
+kubectl port-forward $pod_name 7000:http
