@@ -1,7 +1,9 @@
 minikube start
 eval $(minikube -p minikube docker-env)
-
+namespace=xmartlake
+kubectl config set-context --current --namespace=$namespace
 kubectl apply -f k8s/namespace.yml
+
 kubectl apply -f k8s/deployment-mongo.yml
 
 kubectl apply -f k8s/deployment-builder.yml
@@ -14,6 +16,26 @@ kubectl apply -f k8s/sevice-builder.yml
 kubectl apply -f k8s/service-supervisor.yml
 kubectl apply -f k8s/service-coordinator.yml
 
-kubectl config set-context --current --namespace=xmartlake
+wait_for_pod_ready() {
+    local end_time=$((SECONDS + timeout_seconds))
+    while [ $SECONDS -lt $end_time ]; do
+        pod_status=$(kubectl get pod "$pod_name" -n "$namespace" -o jsonpath='{.status.phase}')
+        if [ "$pod_status" == "Running" ]; then
+            echo "Pod $pod_name is running and ready!"
+            return 0
+        fi
+        sleep $interval_seconds
+    done
+    echo "Timeout: Pod did not become ready within $timeout_seconds seconds."
+    return 1
+}
+
+
 pod_name=$(kubectl get pods -l app=coordinator -o=jsonpath='{.items[*].metadata.name}')
+
+
+timeout_seconds=120
+interval_seconds=5
+wait_for_pod_ready
+
 kubectl port-forward $pod_name 7000:http
