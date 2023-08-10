@@ -1,6 +1,15 @@
 #!/bin/bash
 
-# minikube start
+# Check if Minikube is already running
+minikube status >/dev/null 2>&1
+
+if [[ $? -ne 0 ]]; then
+    echo "Minikube is not running. Starting Minikube..."
+    minikube start
+else
+    echo "Minikube is already running."
+fi
+
 eval $(minikube -p minikube docker-env)
 eval $(minikube docker-env)
 minikube cache reload
