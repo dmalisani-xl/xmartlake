@@ -1,1 +1,1 @@
-docker build ../coordinator -t coordinator:latest
+docker buildx build ../coordinator -t coordinator:latest

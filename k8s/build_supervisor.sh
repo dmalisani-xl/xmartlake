@@ -1,1 +1,1 @@
-docker build ../bots_supervisor -t supervisor:latest
+docker buildx build ../bots_supervisor -t supervisor:latest

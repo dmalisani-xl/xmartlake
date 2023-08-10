@@ -1,7 +1,12 @@
-minikube start
+#!/bin/bash
+
+# minikube start
 eval $(minikube -p minikube docker-env)
+eval $(minikube docker-env)
+minikube cache reload
 namespace=xmartlake
-kubectl config set-context --current --namespace=$namespace
+kubectl config use-context minikube
+kubectl config set-context minikube --namespace=$namespace
 kubectl apply -f k8s/namespace.yml
 
 kubectl apply -f k8s/deployment-mongo.yml
@@ -18,7 +23,10 @@ kubectl apply -f k8s/service-coordinator.yml
 
 wait_for_pod_ready() {
     local end_time=$((SECONDS + timeout_seconds))
+    echo $SECONDS
+    echo $end_time
     while [ $SECONDS -lt $end_time ]; do
+        echo $SECONDS
         pod_status=$(kubectl get pod "$pod_name" -n "$namespace" -o jsonpath='{.status.phase}')
         if [ "$pod_status" == "Running" ]; then
             echo "Pod $pod_name is running and ready!"
@@ -30,9 +38,7 @@ wait_for_pod_ready() {
     return 1
 }
 
-
 pod_name=$(kubectl get pods -l app=coordinator -o=jsonpath='{.items[*].metadata.name}')
-
 
 timeout_seconds=120
 interval_seconds=5

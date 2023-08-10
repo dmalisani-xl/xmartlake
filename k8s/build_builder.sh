@@ -1,1 +1,1 @@
-docker build ../bots_builder -t builder:latest
+docker buildx build ../bots_builder -t builder:latest
