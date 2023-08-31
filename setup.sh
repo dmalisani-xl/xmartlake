@@ -15,6 +15,7 @@ fi
 
 eval $(minikube -p minikube docker-env) # minikube image load coordinator:latest
 eval $(minikube docker-env)
+minikube cache add
 minikube cache reload
 namespace=xmartlake
 kubectl config get-contexts
