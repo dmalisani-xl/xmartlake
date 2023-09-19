@@ -126,9 +126,12 @@ class TurnRecord(BaseModel):
     received_response: str | None = None
     action: str | None = None
     dead: bool = False
+    collision: bool = False
+    collision_to: bool = False
     hit: bool = False  # by collision
     hit_to: str | None = None 
     target_reached: bool = False
+    target_abs_coordinates: str = ""
     wrong_response: bool = False
     notes: str = ""
 

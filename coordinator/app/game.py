@@ -284,11 +284,12 @@ def action_fire(game: GameSession, turn: TurnRecord) -> TurnRecord:
     environment = decode_environment(turn.sent_payload)
     enemy_positions = [k for k, v in environment.get("by_coord", {}).items() if v == FOE_SYMBOL]
     
+    abs_position = _make_absolute_coord(
+        original_value=(turn.origin_position_x, turn.origin_position_y),
+        relative_position=(target_x, target_y)
+    )
+    turn.target_abs_coordinates = str(abs_position)
     if (target_x, target_y) in enemy_positions:
-        abs_position = _make_absolute_coord(
-            original_value=(turn.origin_position_x, turn.origin_position_y),
-            relative_position=(target_x, target_y)
-        )
         turn = enemy_reached(game=game, turn=turn, position=abs_position)
         turn.target_reached = True
     return turn
