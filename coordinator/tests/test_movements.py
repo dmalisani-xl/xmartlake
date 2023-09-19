@@ -304,7 +304,8 @@ def test_move_to_collision(patched_save_doc, mocked_getplayer, monkeypatch: Monk
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 6
     assert modified_turn.final_position_y == 5
-    assert modified_turn.hit
+    assert modified_turn.collision
+    assert modified_turn.collision_to == "bot2"
     assert modified_turn.final_bullets == modified_turn.origin_bullets
     assert modified_turn.final_health == 90
     assert modified_turn.final_shield_enabled == modified_turn.origin_shield_enabled
@@ -329,7 +330,7 @@ def test_move_to_collision_with_shield(patched_save_doc, mocked_getplayer, monke
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 6
     assert modified_turn.final_position_y == 5
-    assert modified_turn.hit
+    assert modified_turn.collision
     assert modified_turn.final_bullets == modified_turn.origin_bullets
     assert modified_turn.final_health == 95
     assert modified_turn.final_shield_enabled == modified_turn.origin_shield_enabled
@@ -355,7 +356,7 @@ def test_move_to_collision_with_enemy_shield(patched_save_doc, mocked_getplayer,
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 6
     assert modified_turn.final_position_y == 5
-    assert modified_turn.hit
+    assert modified_turn.collision
     assert modified_turn.final_bullets == modified_turn.origin_bullets
     assert modified_turn.final_health == 90
     assert modified_turn.final_shield_enabled == modified_turn.origin_shield_enabled
@@ -383,7 +384,7 @@ def test_move_to_collision_with_both_shield(patched_save_doc, mocked_getplayer, 
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 6
     assert modified_turn.final_position_y == 5
-    assert modified_turn.hit
+    assert modified_turn.collision
     assert modified_turn.final_bullets == modified_turn.origin_bullets
     assert modified_turn.final_health == 95
     assert modified_turn.final_shield_enabled == modified_turn.origin_shield_enabled
@@ -439,7 +440,7 @@ def test_move_to_wall_collision(patched_save_doc, monkeypatch: MonkeyPatch):
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 7
     assert modified_turn.final_position_y == 6
-    assert modified_turn.hit
+    assert modified_turn.collision
     assert modified_turn.final_bullets == modified_turn.origin_bullets
     assert modified_turn.final_health == 90
     assert modified_turn.final_shield_enabled == modified_turn.origin_shield_enabled
@@ -470,7 +471,7 @@ def test_move_to_wall_collision_with_shield(patched_save_doc, mocked_savestatus,
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 7
     assert modified_turn.final_position_y == 6
-    assert modified_turn.hit
+    assert modified_turn.collision
     assert modified_turn.final_bullets == modified_turn.origin_bullets
     assert modified_turn.final_health == 95
     assert modified_turn.final_shield_enabled == modified_turn.origin_shield_enabled
@@ -508,7 +509,7 @@ def test_move_to_collision_all_path_occupied(
     assert modified_turn.action == "M"
     assert modified_turn.final_position_x == 7
     assert modified_turn.final_position_y == 7
-    assert modified_turn.hit
+    assert modified_turn.collision
     assert modified_turn.final_bullets == modified_turn.origin_bullets
     assert modified_turn.final_health == 90
     assert modified_turn.final_shield_enabled == modified_turn.origin_shield_enabled
