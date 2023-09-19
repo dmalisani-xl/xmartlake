@@ -31,7 +31,7 @@ class GameEventType(Enum):
     END_GAME = "END_GAME"
     END_ROUND = "END_ROUND"
     SOME_DIED = "SOME_DIED"
-    HIT = "HIT"
+    COLLISION = "COLLISION"
 
 
 class ActionOfBot(Enum):

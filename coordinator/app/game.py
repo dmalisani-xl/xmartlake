@@ -382,8 +382,8 @@ def fight_by_collision(game: GameSession, turn: TurnRecord, target_player: Playe
 
     turn.final_health = turn.origin_health - damage_on_source_player
     target_player.health -= damage_on_target_player
-    turn.hit = True
-    turn.hit_to = target_player.bot_identifier
+    turn.collision = True
+    turn.collision_to = target_player.bot_identifier
     dead_target = dead_player(game=game, player=target_player)
     save_doc(Databases.PLAYERS, target_player)
     if dead_target:
@@ -396,7 +396,7 @@ def wall_collision_damage(game: GameSession, turn: TurnRecord) -> TurnRecord:
     if turn.origin_shield_enabled:
         damage = int(damage * SHIELD_PROTECTION_PERCENTAGE / 100)
     turn.final_health = turn.origin_health - damage
-    turn.hit = True
+    turn.collision = True
     return turn
 
 
@@ -442,7 +442,7 @@ def manage_enemy_collision(*,
     )
     register_event(
         game=game,
-        event_type=GameEventType.HIT,
+        event_type=GameEventType.COLLISION,
         info=f"{turn.bot_identifier},{hit_player.bot_identifier}"
     )
 

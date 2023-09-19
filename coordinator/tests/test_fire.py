@@ -174,6 +174,7 @@ def test_player_hit_by_bullet_dead_enemy(patched_save_doc,
     assert modified_turn.final_shield_enabled == modified_turn.origin_shield_enabled
     assert modified_turn.final_fuel == 49
     assert modified_turn.target_reached == True
+    assert modified_turn.target_abs_coordinates == "(5, 5)"
     patched_save_doc.assert_called()
     mocked_register_event.assert_called()
     mocked_remove_player_from_game.assert_called()
@@ -206,6 +207,7 @@ def test_player_fire_missed(patched_save_doc, mocked_getplayer, monkeypatch: Mon
     assert modified_turn.final_shield_enabled == modified_turn.origin_shield_enabled
     assert modified_turn.final_fuel == 49
     assert modified_turn.target_reached == False
+    assert modified_turn.target_abs_coordinates == "(6, 6)"
     patched_save_doc.assert_called()
 
 @patch("app.game.get_players_in_area")
