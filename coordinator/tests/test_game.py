@@ -13,7 +13,11 @@ def _players_maker(quantity: int) -> list[Player]:
             position_y=x,
             email=f"address{x}@svr.com",
             bot_identifier=f"bot{x}",
-            owner="mine"
+            owner="mine",
+            language="python",
+            name=f"tested_bot{x}",
+            code="invalid-code"
+
         )
         list_of_players.append(p)
     return list_of_players

@@ -27,7 +27,11 @@ PLAYER_1 = Player(
     bot_identifier="bot1",
     owner="test",
     email="test@test.com",
-    victories=0
+    victories=0,
+    language="python",
+    name="tested_bot1",
+    code="invalid-code"
+
 )
 
 

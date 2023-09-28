@@ -33,7 +33,10 @@ def _players_maker(quantity: int) -> list[Player]:
             position_y=x,
             email=f"address{x}@svr.com",
             bot_identifier=f"bot{x}",
-            owner="mine"
+            owner="mine",
+            language="python",
+            name=f"tested_bot{x}",
+            code="invalid-code"
         )
         list_of_players.append(p)
     return list_of_players
@@ -43,18 +46,17 @@ def _players_maker(quantity: int) -> list[Player]:
 def test_normal_board(patched_save_doc, monkeypatch: MonkeyPatch):
     patch_settings(monkeypatch)
     players = _players_maker(5)
-    randomize_positions(players=players)
+    randomize_positions(players=players, limit_x=20, limit_y=20)
     patched_save_doc.assert_called()
     for call in patched_save_doc.mock_calls:
-        assert call[1][1].position_x < 20  # DEFAULT_WIDTH
-        assert call[1][1].position_y < 20  # DEFAULT_HEIGHT
+        assert call[1][1].position_x < 20  # LIMIT
+        assert call[1][1].position_y < 20  # LIMIT
 
 
 
 @patch("app.game.save_doc")
 def test_too_small_board(patched_save_doc, monkeypatch: MonkeyPatch):
-    patch_settings(monkeypatch, {"DEFAULT_WIDTH": 5, "DEFAULT_HEIGHT": 5})
     players = _players_maker(30)
     with pytest.raises(Exception, match="Board too small for 30 players"):
-        randomize_positions(players=players)
+        randomize_positions(players=players, limit_x=5, limit_y=5)
     patched_save_doc.assert_not_called()

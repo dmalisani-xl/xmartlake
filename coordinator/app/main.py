@@ -1,13 +1,23 @@
+import logging
 from fastapi import (
     FastAPI,
     status,
     HTTPException,
-    logger
 )
 from app.models import PlayerLoader
 from app.rpc.grpc_main import build_image, call_to_bot, ping_to_builder, ping_to_manager
 from app.game import play, register_new_player, find_existent_bot
+
+log_handler = logging.StreamHandler()
+log_handler.setFormatter(logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s'))
+
+logger = logging.getLogger(__name__)
+logger.addHandler(log_handler)
+logger.setLevel(logging.DEBUG)
+
 VERSION = "0.0.1"
+
+
 app = FastAPI(
     title="XmartLake coordinator",
     description=f"API for the botgame",

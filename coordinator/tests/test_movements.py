@@ -25,7 +25,10 @@ PLAYER_1 = Player(
     bot_identifier="bot1",
     owner="test",
     email="test@test.com",
-    victories=0
+    victories=0,
+    language="python",
+    name="tested_bot1",
+    code="invalid-code"
 )
 PLAYER_2 = Player(
     position_x=5,
@@ -37,8 +40,12 @@ PLAYER_2 = Player(
     bot_identifier="bot2",
     owner="test",
     email="test@test.com",
-    victories=0
-)    
+    victories=0,
+    language="python",
+    name="tested_bot2",
+    code="invalid-code"
+)
+
 ROWS = [
     ".......",
     ".F.....",

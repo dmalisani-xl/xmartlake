@@ -32,6 +32,7 @@ class GameEventType(Enum):
     END_ROUND = "END_ROUND"
     SOME_DIED = "SOME_DIED"
     COLLISION = "COLLISION"
+    BOARD = "BOARD"
 
 
 class ActionOfBot(Enum):
@@ -44,41 +45,19 @@ class ActionOfBot(Enum):
     SKIPPED = "/"
 
 
-class Player(BaseModel):
-    position_x: int
-    position_y: int
-    fuel: int = DEFAULT_FUEL
-    health: int = DEFAULT_HEALTH
-    bullets: int = DEFAULT_BULLETS
-    shield_mounted: bool = False
-    bot_identifier: str
-    owner: str
-    email: EmailStr
-    victories: int = 0
-    dead: bool = False
-
-    @property
-    def _id(self) -> str:
-        return self.bot_identifier
-
-    def export(self) -> dict:
-        data = self.dict()
-        data["_id"] = self._id
-        return data
-
 class PlayerLoader(BaseModel):
     bot_identifier: str = Field(default_factory=uuid4_generator)
     language: SupportedLanguage
     name: str
     email: EmailStr
     code: str
-    avatar_b64: str
+    avatar_b64: str | None = None
     creation_datetime: datetime = datetime.now()
     built: bool = False
-    image_identifier: str
-
+    image_identifier: str | None = None
+    dead: bool = False
     class Config:
-        fields = {"built": {"exclude": True}, "image_identifier": {"exclude": True}}
+        # fields = {"built": {"exclude": True}, "image_identifier": {"exclude": True}}
 
         schema_extra = {
             "example": {
@@ -90,13 +69,24 @@ class PlayerLoader(BaseModel):
             }
         }
 
-    @validator("avatar_b64")
-    def png_or_jpg_length_less_than_64k(cls, v):
-        if len(v) > 64000:
-            raise ValidationError("Avatar is too big", model=PlayerLoader)
-        if not v.startswith("data:image/jpeg;base64,") or v.startswith("data:image/png;base64,"):
-            raise ValidationError("Avatar must have a PNG or JPG", model=PlayerLoader)
-        return v
+    @property
+    def _id(self) -> str:
+        return self.bot_identifier
+
+    def export(self) -> dict:
+        data = self.dict()
+        data["_id"] = self._id
+        return data
+
+class Player(PlayerLoader):
+    position_x: int | None = None
+    position_y: int | None = None
+    fuel: int = DEFAULT_FUEL
+    health: int = DEFAULT_HEALTH
+    bullets: int = DEFAULT_BULLETS
+    shield_mounted: bool = False
+    victories: int = 0
+
 
 
 class TurnRecord(BaseModel):
@@ -128,10 +118,10 @@ class TurnRecord(BaseModel):
     dead: bool = False
     collision: bool = False
     collision_to: bool = False
-    hit: bool = False  # by collision
+    hit: bool = False
     hit_to: str | None = None 
-    target_reached: bool = False
-    target_abs_coordinates: str = ""
+    target_reached: bool = False  # deprecar
+    target_abs_coordinates: str = "" 
     wrong_response: bool = False
     notes: str = ""
 

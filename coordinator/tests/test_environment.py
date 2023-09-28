@@ -13,7 +13,10 @@ PLAYER_1 = Player(
     bot_identifier="bot2",
     owner="test",
     email="test@test.com",
-    victories=0
+    victories=0,
+    language="python",
+    name="tested_bot1",
+    code="invalid-code",
 )
 
 PLAYER_2 = Player(
@@ -26,7 +29,10 @@ PLAYER_2 = Player(
     bot_identifier="bot2",
     owner="test",
     email="test@test.com",
-    victories=0
+    victories=0,
+    language="python",
+    name="tested_bot2",
+    code="invalid-code",
 )
 PLAYER_3 = Player(
     position_x=4,
@@ -35,10 +41,13 @@ PLAYER_3 = Player(
     fuel=50,
     bullets=10,
     shield_mounted=False,
-    bot_identifier="bot2",
+    bot_identifier="bot3",
     owner="test",
     email="test@test.com",
-    victories=0
+    victories=0,
+    language="python",
+    name="tested_bot1",
+    code="invalid-code",
 )
 def _players_maker(quantity: int) -> list[Player]:
     list_of_players = []
@@ -63,6 +72,8 @@ def patch_settings(patch_instance, overwrite: dict = None):
         "WALL_SYMBOL": "W",
         "DEFAULT_WIDTH": 20,
         "DEFAULT_HEIGHT": 20,
+        "current_board_width":20,
+        "current_board_width": 20
     }
     for name, v in var_default_value.items():
         if name in over.keys():

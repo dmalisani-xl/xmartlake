@@ -9,7 +9,6 @@ database = client[database_name]
 
 class Databases(Enum):
     GAMES = "GAMES"
-    BOTS = "BOTS"
     PLAYERS = "PLAYERS"
     TURNS = "TURNS"
     BOARD_EVENTS = "BOARD_EVENTS"
@@ -31,10 +30,11 @@ def load_doc(db: Databases, document_id: str) -> dict:
 def get_players_in_area(window: tuple[int, int, int, int]) -> list[dict]:
     """window: x1, y1, x2, y2"""
     x1, y1, x2, y2 = window
-    results = database[Databases.GAMES.value].find(
+    results = database[Databases.PLAYERS.value].find(
         {
             "position_x": {"$gte": x1, "$lte": x2},
             "position_y": {"$gte": y1, "$lte": y2},
+            "dead": False
         }
     )
     return [r for r in results]
@@ -56,14 +56,14 @@ def get_registered_players(only_alive: True) -> list:
 def get_bots(bot_id: str | None) -> list:
     filters = {"bot_identifier": bot_id} if bot_id else {}
     results = database[Databases.PLAYERS.value].find(filters)
-    return [r for r in results]  
+    return [r for r in results]
 
 
 def load_events_for_game(game_id):
-    results = database[Databases.BOARD_EVENTS.value].find(filter={"game_id": game_id})
+    results = database[Databases.BOARD_EVENTS.value].find()
     return [r for r in results]
 
 
 def load_turns_for_game(game_id):
-    results = database[Databases.TURNS.value].find(filter={"game_id": game_id})
+    results = database[Databases.TURNS.value].find()
     return [r for r in results]

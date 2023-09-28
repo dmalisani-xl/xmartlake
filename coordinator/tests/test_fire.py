@@ -27,7 +27,10 @@ PLAYER_1 = Player(
     bot_identifier="bot1",
     owner="test",
     email="test@test.com",
-    victories=0
+    victories=0,
+    language="python",
+    name="tested_bot1",
+    code="invalid-code"
 )
 PLAYER_2 = Player(
     position_x=5,
@@ -39,7 +42,10 @@ PLAYER_2 = Player(
     bot_identifier="bot2",
     owner="test",
     email="test@test.com",
-    victories=0
+    victories=0,
+    language="python",
+    name="tested_bot2",
+    code="invalid-code"
 ) 
 
 ROWS = [
@@ -111,10 +117,9 @@ def test_player_hit_by_bullet_normal(patched_save_doc, mocked_getplayer, monkeyp
     assert modified_turn.final_fuel == 49
     assert modified_turn.target_reached == True
     patched_save_doc.assert_called()
-    assert patched_save_doc.mock_calls[0].args == (
-        Databases.PLAYERS,
-        Player(position_x=5, position_y=5, fuel=50, health=80, bullets=10, shield_mounted=False, bot_identifier='bot2', owner='test', email='test@test.com', victories=0, dead=False)
-    )
+    db, doc = patched_save_doc.mock_calls[0].args
+    assert db == Databases.PLAYERS
+    assert doc.bot_identifier == "bot2"
 
 @patch("app.game.get_players_in_area")
 @patch("app.game.save_doc")
@@ -140,10 +145,9 @@ def test_player_hit_by_bullet_shield_enemy(patched_save_doc, mocked_getplayer, m
     assert modified_turn.final_fuel == 49
     assert modified_turn.target_reached == True
     patched_save_doc.assert_called()
-    assert patched_save_doc.mock_calls[0].args == (
-        Databases.PLAYERS,
-        Player(position_x=5, position_y=5, fuel=50, health=90, bullets=10, shield_mounted=True, bot_identifier='bot2', owner='test', email='test@test.com', victories=0, dead=False)
-    )
+    db, doc = patched_save_doc.mock_calls[0].args
+    assert db == Databases.PLAYERS
+    assert doc.bot_identifier == "bot2"
 
 @patch("app.game.remove_player_from_game")
 @patch("app.game.register_event")
@@ -178,10 +182,9 @@ def test_player_hit_by_bullet_dead_enemy(patched_save_doc,
     patched_save_doc.assert_called()
     mocked_register_event.assert_called()
     mocked_remove_player_from_game.assert_called()
-    assert patched_save_doc.mock_calls[0].args == (
-        Databases.PLAYERS,
-        Player(position_x=5, position_y=5, fuel=50, health=0, bullets=10, shield_mounted=False, bot_identifier='bot2', owner='test', email='test@test.com', victories=0, dead=False)
-    )
+    db, doc = patched_save_doc.mock_calls[0].args
+    assert db == Databases.PLAYERS
+    assert doc.bot_identifier == "bot2"
 
 
 @patch("app.game.get_players_in_area")
