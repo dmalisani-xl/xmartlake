@@ -78,15 +78,15 @@ class PlayerLoader(BaseModel):
         data["_id"] = self._id
         return data
 
+
 class Player(PlayerLoader):
-    position_x: int | None = None
-    position_y: int | None = None
+    position_x: int | None
+    position_y: int | None
     fuel: int = DEFAULT_FUEL
     health: int = DEFAULT_HEALTH
     bullets: int = DEFAULT_BULLETS
     shield_mounted: bool = False
     victories: int = 0
-
 
 
 class TurnRecord(BaseModel):
@@ -104,8 +104,8 @@ class TurnRecord(BaseModel):
     origin_victories: int
     origin_shield_enabled: bool = False
 
-    final_position_x: int | None = None
-    final_position_y: int | None = None
+    final_position_x: int | None
+    final_position_y: int | None
     final_fuel: int | None = None
     final_health: int | None = None
     final_bullets: int | None = None

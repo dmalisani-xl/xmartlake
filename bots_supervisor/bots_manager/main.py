@@ -27,19 +27,14 @@ k8s_apps_v1 = client.AppsV1Api()
 pods = k8s_client.list_namespaced_pod(namespace=NAMESPACE)
 
 
-def get_pod_ip(bot_id: str):
+def get_pod_name_ip(bot_id: str):
     pods = k8s_client.list_namespaced_pod(namespace=NAMESPACE, label_selector=f'app={bot_id}')
-    return pods.items[0].status.pod_ip if (len(pods.items) and getattr(pods.items[0], "status")) else None
-
-def get_deployment_name(bot_id: str):
-    pods = k8s_client.list_namespaced_pod(namespace=NAMESPACE, label_selector=f'app={bot_id}')
-    return pods.items[0].metadata.name if (len(pods.items) and getattr(pods.items[0], "status")) else None
+    return (pods.items[0].metadata.name, pods.items[0].status.pod_ip) if (len(pods.items) and getattr(pods.items[0], "status")) else None, None
 
 
 def send_when_ready(bot_id: str, parameter: str) -> str:
     # Wait until the pod is in the 'Running' state
-    pod_name = get_deployment_name(bot_id)
-    print(f"Waiting for bot {pod_name}")
+    print(f"Waiting for bot {bot_id}")
     breaker_count = 0
 
     # Wait until the gRPC service is ready
@@ -53,8 +48,7 @@ def send_when_ready(bot_id: str, parameter: str) -> str:
         if breaker_count > 3:
             raise RuntimeError(f"{pod_name} is not ready")
         
-    print(get_pod_ip(bot_id))
-    pod_ip = get_pod_ip(bot_id)
+    pod_name, pod_ip = get_pod_name_ip(bot_id)
     print(f"Name: {pod_name}  ID: {bot_id}  IP: {pod_ip}")
     if not pod_ip:
         raise Exception("Pod not found")
@@ -87,18 +81,18 @@ def send_when_ready(bot_id: str, parameter: str) -> str:
     except Exception as e:
         print(e)
         raise RuntimeError(e)
-    return response.response
+    return pod_name, response.response
 
 
 
-def create_new_bot(bot_id: str):
+def create_new_deployment(bot_id: str):
 
     deployment = make_deployment(bot_id)
     print("------ Creating deployment ------")
-
+    dep = None
     for attempt in (1, 2):
         try:
-            _ = k8s_apps_v1.create_namespaced_deployment(body=deployment, namespace=NAMESPACE)
+            dep = k8s_apps_v1.create_namespaced_deployment(body=deployment, namespace=NAMESPACE, async_req=False)
             print("--- Deployment created ---")
             break
         except ApiException as e:
@@ -110,12 +104,10 @@ def create_new_bot(bot_id: str):
                 time.sleep(10)
             else:
                 raise
+    return dep
 
-
-def delete_bot_deployment(bot_id: str):
+def delete_bot_deployment(deployment_name: str):
     # Delete the deployment
-    deployment_name = get_deployment_name(bot_id)
-    # delete_replica_sets(deployment_name)
 
     print("------ Destroying deployment ------")
     k8s_apps_v1.delete_namespaced_deployment(
@@ -136,10 +128,8 @@ def delete_bot_deployment(bot_id: str):
                 break
         time.sleep(1)
 
-def delete_pod(bot_id: str):
+def delete_pod(deployment_name: str):
     # Delete the deployment
-    deployment_name = get_deployment_name(bot_id)
-
     print(f"Deleting pod {deployment_name}")
     k8s_client.delete_namespaced_pod(name=deployment_name, namespace=NAMESPACE)
 
@@ -147,7 +137,7 @@ def delete_pod(bot_id: str):
 
 def reset_pod(bot_id: str):
     print("Deleting pod")
-    bot_name = get_deployment_name(bot_id)
+    bot_name, _ = get_pod_name_ip(bot_id)
     try:
         print(f"Down {bot_name}")
         k8s_client.patch_namespaced_deployment_scale(
@@ -183,7 +173,7 @@ def delete_replica_sets(deployment_name: str):
         )
 
 def restart_pod(bot_id):
-  pod_name = get_deployment_name(bot_id)
+  pod_name, _ = get_pod_name_ip(bot_id)
   try:
     pod = k8s_client.read_namespaced_pod(name=pod_name, namespace=NAMESPACE)
   except ApiException as e:
@@ -218,19 +208,33 @@ def pod_is_running(bot_id):
     return False
 
 
+def get_deploment_name(bot_id):
+    deployment_name = None
+    deployments = k8s_apps_v1.list_namespaced_deployment(namespace=NAMESPACE, label_selector=f'app={bot_id}')
+    for deployment in deployments.items:
+        deployment_name = deployment.metadata.name
+    return deployment_name
+
+
 def call_to_bot(bot_id: str, parameter: str) -> str:
+    dep_name = get_deploment_name(bot_id)
+    if not dep_name:
+        dep = create_new_deployment(bot_id)
+        dep_name = dep.metadata.name
+        print(f"//Deployment created: {dep_name} for bot: {bot_id}")
+    else:
+        print(f"Found deployment: {dep_name} for {bot_id}")
+    
     try:
-        if not pod_is_running(bot_id):
-            create_new_bot(bot_id)
         response = send_when_ready(bot_id, parameter)
 
     except RuntimeError:
-        print("Pod is not working")
+        print(f"Pod {bot_id} is not working")
         response = "XXX"
 
-    delete_thread = threading.Thread(target=delete_pod, args=(bot_id,))
-    delete_thread.start()
-    # delete_pod(bot_id)
+    # delete_thread = threading.Thread(target=delete_pod, args=(dep_name,))
+    # delete_thread.start()
+    delete_pod(bot_id)
     print(f"Returning response: {response}")
     return response
 

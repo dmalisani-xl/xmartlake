@@ -24,7 +24,7 @@ def call_to_bot(bot_id: str, parameter: str):
                     raise Exception(f"Could not contact to bot {bot_id}")
 
         response = stub.call(request)
-        print(f"Received: {response.response}")
+        print(f"Received from {bot_id}: {response.response}")
         return response.response
 
 

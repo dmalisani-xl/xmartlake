@@ -189,6 +189,7 @@ def make_call_to_bot(player: Player, parameter: str) -> str:
 
 def play_next_turn(game: GameSession) -> TurnRecord:
     player = _choice_next_player(game)
+    
     environment = get_player_environment(player)
     turn_parameter = stringfy_parameter(player, environment)
     turn = TurnRecord(
@@ -209,7 +210,7 @@ def play_next_turn(game: GameSession) -> TurnRecord:
     return turn
 
 
-def _get_all_players() -> list[Player]:
+def get_all_players() -> list[Player]:
     players_list_of_dict = get_registered_players(True)
     return [Player(**item) for item in players_list_of_dict]
 
@@ -722,7 +723,7 @@ def get_turns(game: GameSession) -> list[TurnRecord]:
 
 
 def play() -> dict:
-    all_players = _get_all_players()
+    all_players = get_all_players()
     if not all_players or len(all_players) < 2:
         raise ValueError("There is no players registered for this game")
 
