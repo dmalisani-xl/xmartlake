@@ -1,0 +1,33 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.dropdown {
+  margin-bottom: 10px;
+}
+
+.editor {
+  box-shadow: rgba(0, 0, 0, 0.1) 0px 0px 5px 0px, rgba(0, 0, 0, 0.1) 0px 0px 1px 0px;
+}
+
+.image {
+  width: 20px;
+  height: 20px;
+  object-fit: cover;
+}
+
+.label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.buttonContainer {
+  with: 10%;
+}
+
+.textField {
+  border-radius: 2px;
+}
