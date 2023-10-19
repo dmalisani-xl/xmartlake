@@ -2,7 +2,7 @@ const jsFunctionDeclarationLength = 28;
 const pythonFunctionDeclarationLength = 19;
 
 export const javascriptStartFunction = 
-`const botFunction = () => {
+`const botFunction = (parameter) => {
   // Write your code here
 }`;
 
