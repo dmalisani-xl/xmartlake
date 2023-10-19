@@ -16,4 +16,7 @@ COPY --chown=node:node . .
 
 RUN npm run build
 
-CMD cp -r build/* host-build/
+EXPOSE 5173
+
+CMD npm start
+
