@@ -561,6 +561,7 @@ def action_move(game: GameSession, turn: TurnRecord) -> TurnRecord:
         assert x <= DEFAULT_VISIBILY_DISTANCE * 2 + 1, "Invalid coord"
         assert y <= DEFAULT_VISIBILY_DISTANCE * 2 + 1, "Invalid coord"
         assert turn.origin_fuel > 0, "No fuel"
+        assert not (x == 3 and y == 3), "Moved to the same place"
     except AssertionError as e:
         turn.notes = e.args[0]
         turn.wrong_response = True
@@ -597,6 +598,7 @@ def action_move(game: GameSession, turn: TurnRecord) -> TurnRecord:
                 turn=turn,
                 coord=(abs_x, abs_y)
             )
+        
         x, y = _find_a_new_position((x, y), occupied_positions)
         collided_with = environment.get("by_coords", {}).get((x, y))
 
@@ -605,6 +607,7 @@ def action_move(game: GameSession, turn: TurnRecord) -> TurnRecord:
         relative_position=(x, y)
     )
     turn.final_position_x, turn.final_position_y = abs_x, abs_y 
+    turn.dead = not turn.final_health > 0
     return turn
 
 

@@ -10,7 +10,7 @@ IMAGE_NAME = environ.get("IMAGE_NAME", "anonymous")
 
 
 def execute(parameter: str) -> str:
-{{code}}
+    {{code}}
 
 
 class CallProcess(bots_pb2_grpc.TurnCallerServicer):

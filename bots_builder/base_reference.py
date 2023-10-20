@@ -3,5 +3,8 @@ source_info = {
         "base_path": "./dockerfile_templates/python",
         "main_file": "./dockerfile_templates/python/main.py"
     },
-    "node": {}
+    "nodejs/javascript": {
+        "base_path": "./dockerfile_templates/js",
+        "main_file": "./dockerfile_templates/js/main.js"
+    }
 }
