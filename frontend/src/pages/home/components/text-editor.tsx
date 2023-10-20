@@ -47,7 +47,7 @@ const TextEditor = () => {
     let newBot: NewBotData = {
       name: botName,
       email: email || `${botName}@mail.com`,
-      code: btoa(code),
+      code: btoa(extractBotFunctionCode(code, language)),
       language: language,
     }
     if (avatar_base64) {
