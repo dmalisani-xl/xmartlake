@@ -9,7 +9,6 @@ export const colors: { name: string; hex: string }[] = [
   { name: 'Magenta', hex: '#FF00FF' },
   { name: 'Cyan', hex: '#00FFFF' },
   { name: 'Black', hex: '#000000' },
-  { name: 'White', hex: '#FFFFFF' },
   { name: 'Orange', hex: '#FFA500' },
   { name: 'Purple', hex: '#800080' },
   { name: 'Dark Green', hex: '#008000' },

@@ -10,7 +10,7 @@ import python from '../../../assets/images/python.png';
 import { Button } from 'common/button';
 import { FileInput } from 'common/file-input';
 import {
-  javascriptStartFunction, pythonStartFunction , getRange, convertToBase64
+  javascriptStartFunction, pythonStartFunction , getRange, convertToBase64, extractBotFunctionCode
 } from '../../../helpers/text-editor-helpers';
 import { TextField } from 'common/text-field';
 import { useRegisterBot } from 'hooks/useRegisterBot';
@@ -45,10 +45,10 @@ const TextEditor = () => {
   const handleSubmission = async () => {
     const avatar_base64 = avatar ? await convertToBase64(avatar) : '';
     let newBot: NewBotData = {
-      name: btoa(botName),
-      email: btoa(email),
+      name: botName,
+      email: email || `${botName}@mail.com`,
       code: btoa(code),
-      language: btoa(language),
+      language: language,
     }
     if (avatar_base64) {
       newBot = {
@@ -86,7 +86,6 @@ const TextEditor = () => {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setAvatar(e.target.files[0]);
-      console.log(e.target.files[0]);
     }
   };
 
