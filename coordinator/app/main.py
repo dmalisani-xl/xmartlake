@@ -4,6 +4,7 @@ from fastapi import (
     status,
     HTTPException,
 )
+from fastapi.middleware.cors import CORSMiddleware
 from app.models import PlayerLoader
 from app.rpc.grpc_main import build_image, call_to_bot, ping_to_builder, ping_to_manager
 from app.game import play, register_new_player, find_existent_bot
@@ -15,13 +16,27 @@ logger = logging.getLogger(__name__)
 logger.addHandler(log_handler)
 logger.setLevel(logging.DEBUG)
 
-VERSION = "0.0.1"
+VERSION = "0.1.4"
 
 
 app = FastAPI(
     title="XmartLake coordinator",
     description=f"API for the botgame",
     version=VERSION
+)
+origins = [
+    "http://localhost:5173",
+    "http://localhost",
+    "http://0.0.0.0",
+    "*"
+]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_credentials=True,
+    allow_origins=origins,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 @app.get("/")

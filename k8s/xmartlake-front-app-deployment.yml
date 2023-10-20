@@ -17,5 +17,5 @@ spec:
           image: xmartlake-front-app:latest
           imagePullPolicy: Never
           ports:
-            - containerPort: 5173
+            - containerPort: 80
               name: front

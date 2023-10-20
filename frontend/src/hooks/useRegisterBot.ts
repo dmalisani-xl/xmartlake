@@ -6,7 +6,7 @@ import { constants } from "config/constants";
 export const useRegisterBot = () : [boolean, (bot: NewBotData) => Promise<void>, string]=> {
   const [loading, setLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-  const COORDINATOR_URL = 'http://coordinator:7000' 
+  const COORDINATOR_URL = 'http://localhost:7000' 
 
   const registerBot = async (bot: NewBotData) => {
     setLoading(true);

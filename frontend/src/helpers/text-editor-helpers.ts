@@ -25,7 +25,7 @@ export const convertToBase64 = (file: File) => {
 };
 
 export const getRange = (language: string) => {
-  if (language === 'javascript') {
+  if (language === 'nodejs/javascript') {
     return jsFunctionDeclarationLength;
   }
   if (language === 'python') {
@@ -36,7 +36,7 @@ export const getRange = (language: string) => {
 
 export const extractBotFunctionCode = (botFunction: string, language: string): string => {
   switch (language) {
-    case 'javascript':
+    case 'nodejs/javascript':
       return extractJSBotFunctionCode(botFunction);
     case 'python':
       return extractPythonBotFunctionCode(botFunction);
