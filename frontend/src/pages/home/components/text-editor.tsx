@@ -17,7 +17,7 @@ import { useRegisterBot } from 'hooks/useRegisterBot';
 
 const optionsWithImages = [
   {
-    value: 'javascript',
+    value: 'nodejs/javascript',
     label: <div className={styles.label}><img src={js} alt="js" className={styles.image} />Javascript</div>,
   },
   {
@@ -29,7 +29,7 @@ const optionsWithImages = [
 
 const TextEditor = () => {
   const [code, setCode] = useState(javascriptStartFunction);
-  const [language, setLanguage] = useState('javascript');
+  const [language, setLanguage] = useState('nodejs/javascript');
   const [botName, setBotName] = useState('');
   const [email, setEmail] = useState('');
   const [avatar, setAvatar] = useState<File | null>(null);
@@ -61,7 +61,7 @@ const TextEditor = () => {
 
   const onLanguageChange = (option: Option) => {
     setLanguage(option.value);
-    if (option.value === 'javascript') {
+    if (option.value === 'nodejs/javascript') {
       setCode(javascriptStartFunction);
       editorRef.current.setValue(javascriptStartFunction);
     }
