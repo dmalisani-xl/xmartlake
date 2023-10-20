@@ -15,6 +15,7 @@ const IMAGE_NAME = process.env.IMAGE_NAME || 'anonymous';
 
 function execute(parameter) {
     {{code}}
+}
 
 const server = new grpc.Server();
   server.addService(botsProto.TurnCaller.service, {
