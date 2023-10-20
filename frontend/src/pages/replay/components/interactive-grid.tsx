@@ -11,6 +11,8 @@ import { bottts } from '@dicebear/collection';
 import heart from '../../../assets/icons/heart-icon.svg'
 import drop from '../../../assets/icons/drop-icon.svg'
 import bullets from '../../../assets/icons/rifle-gun-bullet-icon.svg'
+import Confetti from 'react-confetti'
+import { Button } from 'common/button';
 
 interface InteractiveGridProps {
   gameData: GameData;
@@ -46,14 +48,15 @@ export interface TurnLog {
 
 const NUM_ROWS = 50;
 const NUM_COLS = 50;
-const SQUARE_SIZE = 30;
+const SQUARE_SIZE = 30; 
 
 const InteractiveGrid: React.FC<InteractiveGridProps> = ({ gameData }) => {
   const [currentTurn, setCurrentTurn] = useState<number>(0);
   const [botsData, setBotsData] = useState<BotData[]>([]);
   const [botTurnInfo, setBotTurnInfo] = useState<BotTurnInfo>({});
   const [turnLogs, setTurnLogs] = useState<TurnLog[]>([]);
-  const [pause, setPause] = useState<boolean>(false);
+  const [winner, setWinner] = useState<BotData | null>(null);
+  const [showWinner, setShowWinner] = useState<boolean>(true);
   const gridRef = useRef<SVGSVGElement>(null);
   const assignColorsToBots = () => {
     const botsData: BotData[] = [];
@@ -80,6 +83,7 @@ const InteractiveGrid: React.FC<InteractiveGridProps> = ({ gameData }) => {
         bullets: player.bullets,
       };
       botsData.push(botData);
+      gameData.winner === player.bot_identifier && setWinner(botData);
       i++;
     });
 
@@ -120,7 +124,7 @@ const InteractiveGrid: React.FC<InteractiveGridProps> = ({ gameData }) => {
   };
 
   const handleAutoPlay = () => {
-    for (let turn = 0; turn < gameData.turns.length && !pause; turn++) {
+    for (let turn = 0; turn < gameData.turns.length; turn++) {
       setTimeout(() => {
         setCurrentTurn(turn + 1);
         if(gridRef.current) {
@@ -188,6 +192,27 @@ const InteractiveGrid: React.FC<InteractiveGridProps> = ({ gameData }) => {
           </div>
         ))}
       </div>
+      {showWinner && gameData.winner && currentTurn === gameData.turns.length && (
+        <div className={styles.winner}>
+          <Confetti/>
+          <h2 className={styles.winnerTitle}>Winner</h2>
+          {winner && winner.customAvatar && (
+            <img src={`data:image/png;base64,${winner.customAvatar}`} width="200px" height="200px" id="bot-avatar" />
+          )}
+          {winner && !winner.customAvatar && (
+            <img src={winner.avatar} width="200px" height="200px" id="bot-avatar" />
+          )}
+          {winner && winner.name}
+          <Button onClick={() => setShowWinner(!showWinner)}>Hide</Button>
+        </div>
+      )}
+      {showWinner && !gameData.winner && currentTurn === gameData.turns.length && (
+        <div className={styles.winner}>
+          <h2 className={styles.winnerTitle}>It's a Draw</h2>
+          <p className={styles.drawIcon}>😬</p>
+          <Button onClick={() => setShowWinner(!showWinner)}>Hide</Button>
+        </div>
+      )}
     </div>
   );
 };
