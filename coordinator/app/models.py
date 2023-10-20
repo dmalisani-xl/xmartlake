@@ -119,7 +119,7 @@ class TurnRecord(BaseModel):
     action: str | None = None
     dead: bool = False
     collision: bool = False
-    collision_to: bool = False
+    collision_to: str | None = None
     hit: bool = False
     hit_to: str | None = None 
     target_abs_coordinates: str = "" 
