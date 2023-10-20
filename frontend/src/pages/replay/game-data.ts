@@ -58,7 +58,7 @@ const gameData: GameData = {
       "victories": 0
     },
   ],
-  "winner": "",
+  "winner": "bot_C",
   "events": [
     {
       "_id": "",
