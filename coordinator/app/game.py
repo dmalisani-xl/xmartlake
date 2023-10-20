@@ -51,6 +51,9 @@ assert DEFAULT_WIDTH == DEFAULT_HEIGHT, "For now only with square board. Tag: B0
 global current_board_width, current_board_height
 current_board_width, current_board_height = DEFAULT_WIDTH, DEFAULT_HEIGHT
 
+class TooManyTurns(Exception):
+    ...
+
 def start_new_game(*,
                    players:list[Player],
                    width: int,
@@ -310,7 +313,7 @@ def action_fire(game: GameSession, turn: TurnRecord) -> TurnRecord:
     turn.target_abs_coordinates = str(abs_position)
     if (target_x, target_y) in enemy_positions:
         turn = enemy_reached(game=game, turn=turn, position=abs_position)
-        turn.target_reached = True
+        turn.hit = True
     return turn
 
 
@@ -319,6 +322,7 @@ def enemy_reached(*, game: GameSession, turn: TurnRecord, position: tuple) -> Tu
     damage_on_hit = DAMAGE_BY_BULLET
     try:
         hit_player = Player(**get_players_in_area(window=(x, y, x, y))[0])
+        turn.hit_to = hit_player.bot_identifier
     except IndexError:
         print("// Error //")
     if hit_player.shield_mounted:
@@ -557,6 +561,7 @@ def action_move(game: GameSession, turn: TurnRecord) -> TurnRecord:
         assert x <= DEFAULT_VISIBILY_DISTANCE * 2 + 1, "Invalid coord"
         assert y <= DEFAULT_VISIBILY_DISTANCE * 2 + 1, "Invalid coord"
         assert turn.origin_fuel > 0, "No fuel"
+        assert not (x == 3 and y == 3), "Moved to the same place"
     except AssertionError as e:
         turn.notes = e.args[0]
         turn.wrong_response = True
@@ -593,6 +598,7 @@ def action_move(game: GameSession, turn: TurnRecord) -> TurnRecord:
                 turn=turn,
                 coord=(abs_x, abs_y)
             )
+        
         x, y = _find_a_new_position((x, y), occupied_positions)
         collided_with = environment.get("by_coords", {}).get((x, y))
 
@@ -601,6 +607,7 @@ def action_move(game: GameSession, turn: TurnRecord) -> TurnRecord:
         relative_position=(x, y)
     )
     turn.final_position_x, turn.final_position_y = abs_x, abs_y 
+    turn.dead = not turn.final_health > 0
     return turn
 
 
@@ -705,7 +712,7 @@ def execute_loop(game: GameSession) -> str:
         game.current_turn = game.current_turn + 1      
 
         if game.current_turn > DEFAULT_STOP_LIMIT:
-            raise Exception("Limit of turns reached")
+            raise TooManyTurns("Limit of turns reached")
             
     
         if (game.current_turn > NORMAL_SIZE_LIMIT) and (game.board_size_x > 6):
@@ -730,7 +737,11 @@ def play() -> dict:
     game, ongoing = start_new_game(players = all_players, width=DEFAULT_WIDTH, height=DEFAULT_HEIGHT)
     if not ongoing:
         randomize_positions(all_players)
-    winner = execute_loop(game)
+    try:
+        winner = execute_loop(game)
+    except TooManyTurns:
+        winner = None
+
     events = get_events(game)
     turns = get_turns(game)
     names = { item.bot_identifier: item.name for item in all_players}

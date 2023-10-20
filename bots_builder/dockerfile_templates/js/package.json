@@ -1,0 +1,9 @@
+{
+  "name": "bot-server",
+  "version": "1.0.0",
+  "description": "A bot code in Node.js",
+  "main": "main.js",
+  "dependencies": {
+    "@grpc/grpc-js": "^1.9.6"
+  }
+}

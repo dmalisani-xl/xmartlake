@@ -4,8 +4,10 @@ from pydantic import (
     ValidationError,
     validator,
     PrivateAttr,
-    Field
+    Field,
+    root_validator
 )
+
 from enum import Enum
 from datetime import datetime
 from uuid import uuid4
@@ -117,10 +119,9 @@ class TurnRecord(BaseModel):
     action: str | None = None
     dead: bool = False
     collision: bool = False
-    collision_to: bool = False
+    collision_to: str | None = None
     hit: bool = False
     hit_to: str | None = None 
-    target_reached: bool = False  # deprecar
     target_abs_coordinates: str = "" 
     wrong_response: bool = False
     notes: str = ""
@@ -133,6 +134,25 @@ class TurnRecord(BaseModel):
         data = self.dict()
         data["_id"] = self._id
         return data
+
+    @root_validator
+    def validate_turns_conditions(cls, values):
+        if not values.get("action"):
+            return values
+        try:
+            assert not values.get("final_health") < 0, "Negative health"
+            assert not values.get("final_bullets") < 0, "Negative bullet"
+            assert not values.get("final_fuel") < 0, "Negative fuel"
+            assert (not values.get("dead")) and values.get("final_health") == 0, "Not dead but no health"
+            assert not (values.get("hit") and not values.get("hit_to")), "Missing hit_to"
+            assert not (values.get("collision") and not values.get("collision_to")), "Missing collision_to"
+            assert not (values.get("action") == "S" and (values.get("origin_shield_enabled") == values.get("final_shield_enabled"))), "Shield not changed when shield action"
+        except AssertionError as e:
+            raise ValidationError(e.args[0])
+        except Exception as e:
+            print(e)
+
+
 
 class GameSession(BaseModel):
     session_identifier: str = Field(default_factory=uuid4_generator)

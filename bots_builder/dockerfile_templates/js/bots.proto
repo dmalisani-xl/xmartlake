@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+message EmptyMessage{}
+
+message Pong{
+    string ack = 1;
+}
+message CallToBot{
+    string botId = 1;
+    string parameter = 2;
+}
+
+message BotResponse{
+    string response = 1;
+}
+
+message BuildRequest{
+    string botId = 1;
+    string language = 2;
+    string code = 3;
+}
+
+message BuildResponse{
+    string imageId = 1;
+}
+
+message TurnMessage{
+    string parameter = 1;
+}
+
+message PlayerResponse{
+    string response = 1;
+}
+
+service BotManager {
+    rpc ping(EmptyMessage) returns (Pong);
+    rpc call(CallToBot) returns (BotResponse);
+}
+
+service BuildManager {
+    rpc ping(EmptyMessage) returns (Pong);
+    rpc buildimage(BuildRequest) returns (BuildResponse);
+}
+
+service TurnCaller {
+    rpc ping(EmptyMessage) returns (Pong);
+    rpc play(TurnMessage) returns (PlayerResponse);
+}

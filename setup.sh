@@ -14,7 +14,7 @@ else
 fi
 
 
- # minikube image load coordinator:latest
+# minikube image load coordinator:latest
 eval $(minikube docker-env)
 minikube cache add
 minikube cache reload
